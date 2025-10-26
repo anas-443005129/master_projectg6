@@ -17,12 +17,9 @@ jobs:
     
     - name: Build and Push
       run: |
-        echo "ACR Name: ${{ secrets.EXISTING_ACR_NAME }}"
-        echo "Image Name: ${{ secrets.IMAGE_NAME }}"
-        echo "Full image tag: ${{ secrets.EXISTING_ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:latest"
-        docker build -t ${{ secrets.EXISTING_ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:latest .
-        az acr login --name ${{ secrets.EXISTING_ACR_NAME }}
-        docker push ${{ secrets.EXISTING_ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:latest
+        docker build -t group6acr.azurecr.io/devops-advisor:latest .
+        az acr login --name group6acr
+        docker push group6acr.azurecr.io/devops-advisor:latest
     
     - name: Terraform Apply
       run: |
@@ -32,8 +29,8 @@ jobs:
     
     - name: Setup AKS
       run: |
-        az aks get-credentials --resource-group ${{ secrets.TERRAFORM_RG }} --name ${{ secrets.AKS_CLUSTER }}
-        az aks update -n ${{ secrets.AKS_CLUSTER }} -g ${{ secrets.TERRAFORM_RG }} --attach-acr ${{ secrets.EXISTING_ACR_NAME }}
+        az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks
+        az aks update -n devopsa-aks -g rg-devops-group6 --attach-acr group6acr
     
     - name: Deploy App
       run: |
