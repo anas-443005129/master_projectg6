@@ -87,7 +87,7 @@ def _build_db_url_from_env() -> str:
     host = os.environ.get("DB_HOST", "localhost")
     port = os.environ.get("DB_PORT", "5432")
     user = os.environ.get("DB_USER", "postgres")
-    password = os.environ.get("DB_PASSWORD")  # No default - must be provided via secret
+    password = os.environ.get("DB_PASSWORD")  
     name = os.environ.get("DB_NAME", "devops_advisor_db")
     
     if not password:
@@ -101,42 +101,53 @@ engine = create_engine(DB_URL, pool_pre_ping=True)
 
 # Database initialization function
 def init_database():
-    """Initialize database tables and test connection"""
-    try:
-        print(">>> Starting database initialization...")
-        print(f">>> Database URL: {DB_URL}")
-        
-        # Test connection first
-        with engine.connect() as conn:
-            result = conn.execute(text("SELECT 1"))
-            print(">>> Database connection test successful!")
-        
-        # Create all tables
-        print(">>> Creating database tables...")
-        Base.metadata.create_all(engine)
-        print(">>> Database tables created successfully!")
-        
-        # Verify tables exist
-        with engine.connect() as conn:
-            result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
-            tables = [row[0] for row in result]
-            print(f">>> Tables in database: {tables}")
+    """Initialize database tables and test connection with retry logic"""
+    import time
+    max_retries = 30
+    retry_delay = 2
+    
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f">>> Database connection attempt {attempt}/{max_retries}")
+            print(f">>> Database URL: {DB_URL}")
             
-        return True
-        
-    except Exception as e:
-        print(f">>> ERROR: Database initialization failed: {e}")
-        print(f">>> Error type: {type(e).__name__}")
-        import traceback
-        print(f">>> Traceback: {traceback.format_exc()}")
-        return False
+            # Test connection first
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT 1"))
+                print(">>> Database connection test successful!")
+            
+            # Create all tables
+            print(">>> Creating database tables...")
+            Base.metadata.create_all(engine)
+            print(">>> Database tables created successfully!")
+            
+            # Verify tables exist
+            with engine.connect() as conn:
+                result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
+                tables = [row[0] for row in result]
+                print(f">>> Tables in database: {tables}")
+                
+            print(">>> Database initialization completed successfully!")
+            return True
+            
+        except Exception as e:
+            print(f">>> Attempt {attempt} failed: {e}")
+            if attempt < max_retries:
+                print(f">>> Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print(f">>> ERROR: Database initialization failed after {max_retries} attempts")
+                print(f">>> Final error: {e}")
+                print(f">>> Error type: {type(e).__name__}")
+                return False
+    
+    return False
 
-# Initialize database on startup
+print(">>> Flask worker starting database initialization...")
 db_initialized = init_database()
+print(f">>> Database initialization result: {db_initialized}")
 
-# ---------------------------
-# Auth setup (Flask-Login)
-# ---------------------------
+
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
