@@ -87,7 +87,7 @@ def _build_db_url_from_env() -> str:
     host = os.environ.get("DB_HOST", "localhost")
     port = os.environ.get("DB_PORT", "5432")
     user = os.environ.get("DB_USER", "postgres")
-    password = os.environ.get("DB_PASSWORD", "postgres")
+    password = os.environ.get("DB_PASSWORD", "SecurePassword123")
     name = os.environ.get("DB_NAME", "devops_advisor_db")
     return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{name}"
 
@@ -95,21 +95,40 @@ def _build_db_url_from_env() -> str:
 DB_URL = os.environ.get("DATABASE_URL", _build_db_url_from_env())
 engine = create_engine(DB_URL, pool_pre_ping=True)
 
-# Create tables if they don't exist
-try:
-    print(">>> Creating database tables...")
-    Base.metadata.create_all(engine)
-    print(">>> Database tables created successfully!")
-    
-    # Test database connection
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT 1"))
-        print(">>> Database connection test successful!")
+# Database initialization function
+def init_database():
+    """Initialize database tables and test connection"""
+    try:
+        print(">>> Starting database initialization...")
+        print(f">>> Database URL: {DB_URL}")
         
-except Exception as _e:
-    print(f">>> ERROR: Database setup failed: {_e}")
-    print(f">>> Database URL: {DB_URL}")
-    # Don't exit, let the app try to continue
+        # Test connection first
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            print(">>> Database connection test successful!")
+        
+        # Create all tables
+        print(">>> Creating database tables...")
+        Base.metadata.create_all(engine)
+        print(">>> Database tables created successfully!")
+        
+        # Verify tables exist
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
+            tables = [row[0] for row in result]
+            print(f">>> Tables in database: {tables}")
+            
+        return True
+        
+    except Exception as e:
+        print(f">>> ERROR: Database initialization failed: {e}")
+        print(f">>> Error type: {type(e).__name__}")
+        import traceback
+        print(f">>> Traceback: {traceback.format_exc()}")
+        return False
+
+# Initialize database on startup
+db_initialized = init_database()
 
 # ---------------------------
 # Auth setup (Flask-Login)
@@ -177,6 +196,19 @@ def index():
 def history_page():
     """Render the dedicated history page"""
     return render_template("history.html")
+
+
+@app.route("/init-db")
+def init_db_endpoint():
+    """Manual database initialization endpoint"""
+    try:
+        success = init_database()
+        if success:
+            return jsonify({"status": "success", "message": "Database initialized successfully"})
+        else:
+            return jsonify({"status": "error", "message": "Database initialization failed"}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route("/auth/register", methods=["GET", "POST"])
