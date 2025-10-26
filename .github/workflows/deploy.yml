@@ -30,7 +30,7 @@ jobs:
       run: |
         cd terraform
         terraform init
-        terraform apply -auto-approve -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+        terraform apply -auto-approve -var="subscription_id=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}"
     
     - name: Setup AKS
       run: |
