@@ -21,6 +21,11 @@ jobs:
         az acr login --name group6acr
         docker push group6acr.azurecr.io/devops-advisor:latest
     
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+    
     - name: Terraform Apply
       run: |
         cd terraform
