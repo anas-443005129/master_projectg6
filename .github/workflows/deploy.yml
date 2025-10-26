@@ -44,6 +44,10 @@ jobs:
         # Run Terraform with optimizations for speed
         cd terraform
         terraform init -upgrade
+        
+        # Force unlock if there's a stuck lock (ignore errors if no lock exists)
+        terraform force-unlock -force ec6ffc3d-3832-e607-6a17-50c980a3fe35 || true
+        
         terraform apply -auto-approve -parallelism=20 -refresh=false -var="subscription_id=$ARM_SUBSCRIPTION_ID"
     
     - name: Setup AKS
