@@ -1,0 +1,172 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-advisor-app
+  namespace: devops-advisor
+  labels:
+    app: devops-advisor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devops-advisor
+  template:
+    metadata:
+      labels:
+        app: devops-advisor
+    spec:
+      containers:
+        - name: devops-advisor
+          image: devopsaacr.azurecr.io/devops-advisor:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5001
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: OPENAI_API_KEY
+            - name: FLASK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: FLASK_SECRET_KEY
+            - name: DB_HOST
+              value: "postgres-db"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+
+# === Operational helper steps (AKS + ACR) ===
+# 2) Connect to AKS (Terraform-created names)
+### az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks --overwrite-existing
+
+# 3) Create namespace (idempotent)
+### kubectl apply -f k8s_solution/namespace.yml
+
+# 4) Apply application secrets (OpenAI + Flask)
+### kubectl apply -f k8s_solution/app-secret.yml
+
+# 5) Apply database manifests
+### kubectl apply -f k8s_solution/db-secret.yml
+### kubectl apply -f k8s_solution/db-pvc.yml
+### kubectl apply -f k8s_solution/db-deploy.yml
+### kubectl apply -f k8s_solution/db-svc.yml
+
+# 6) Wait for PostgreSQL to be ready
+### kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=postgres --timeout=180s
+
+# 7) Build and push app image to ACR (devopsaacr)
+### az acr login --name devopsaacr
+### docker build -t devopsaacr.azurecr.io/devops-advisor:latest .
+### docker push devopsaacr.azurecr.io/devops-advisor:latest
+
+# 8) Apply app manifests
+### kubectl apply -f k8s_solution/api-deploy.yml
+### kubectl apply -f k8s_solution/api-svc-lb.yml
+
+# 9) Wait for app pods to be ready
+### kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=devops-advisor --timeout=180s
+
+# 10) Get the external IP (watch until assigned)
+### kubectl get svc devops-advisor-lb -n devops-advisor -w
+
+# Pods and services
+### kubectl get pods -n devops-advisor
+### kubectl get svc -n devops-advisor
+
+# App logs (follow)
+### kubectl logs -n devops-advisor -l app=devops-advisor --tail=100 -f
+
+# DB logs
+### kubectl logs -n devops-advisor -l app=postgres --tail=100 -f
+
+# Rollout new image (if needed)
+### kubectl rollout restart deployment devops-advisor-app -n devops-advisor
+### kubectl rollout status deployment devops-advisor-app -n devops-advisor
+
+# Remove app only (keep database and namespace)
+### kubectl delete deployment devops-advisor-app -n devops-advisor --ignore-not-found
+### kubectl delete service devops-advisor-lb -n devops-advisor --ignore-not-found
+
+
+
+# 1) Clean everything first
+###kubectl delete namespace devops-advisor
+
+# 2) Wait for namespace to be fully deleted (this may take a minute)
+###kubectl get namespaces | grep devops
+
+# 3) Connect to AKS (if not already connected)
+###az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks --overwrite-existing
+
+# 4) Create namespace
+###kubectl apply -f k8s_solution/namespace.yml
+
+# 5) Apply secrets (database and app)
+###kubectl apply -f k8s_solution/db-secret.yml
+###kubectl apply -f k8s_solution/app-secret.yml
+
+# 6) Deploy database first
+###kubectl apply -f k8s_solution/db-pvc.yml
+###kubectl apply -f k8s_solution/db-deploy.yml
+###kubectl apply -f k8s_solution/db-svc.yml
+
+# 7) Wait for PostgreSQL to be ready
+###kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=postgres --timeout=300s
+
+# 8) Build and push fresh image to ACR
+###az acr login --name devopsaacr
+###docker build -t devopsaacr.azurecr.io/devops-advisor:latest .
+###docker push devopsaacr.azurecr.io/devops-advisor:latest
+
+# 9) Deploy app
+###kubectl apply -f k8s_solution/api-deploy.yml
+###kubectl apply -f k8s_solution/api-svc-lb.yml
+
+# 10) Wait for app pods to be ready
+###kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=devops-advisor --timeout=300s
+
+# 11) Check everything is running
+###kubectl get pods -n devops-advisor
+###kubectl get svc -n devops-advisor
+
+# 12) Get external IP
+###kubectl get svc devops-advisor-lb -n devops-advisor

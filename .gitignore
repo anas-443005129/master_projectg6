@@ -1,0 +1,26 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+
+# Kubernetes secrets (do NOT commit real secrets)
+k8s_solution/app-secret.yml
+k8s_solution/db-secret.yml
+
+# IDE & OS noise
+.idea/
+.DS_Store
+Thumbs.db
+
+
+# Logs
+
+terraform.tfstate
+terraform.lock.hcl
+terraform.tfvars
+terraform.tfstate.backup
+tf.plan
+
+*.log
+.terraform/
+.terraform.lock.hcl

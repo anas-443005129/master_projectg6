@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="{{ url_for('static', filename='C.css') }}">
+    <title>QuizCraft AI</title>
+</head>
+<body>
+    <div class="header">
+        <h2>QuizCraft AI</h2>
+    </div>
+
+    <div class="container">
+    <form method="post">
+            <div class="file-upload">
+                <label for="file">
+                    <img src="{{ url_for('static', filename='4147103.png') }}" alt="Upload file">
+                    <div class="label-text">
+                        <p>select file</p>
+                        <input type="file" id="file" name="file">
+                    </div>
+                </label>
+            </div>
+            <div class="form-group">
+                <input type="text" id="hint" name="hint" placeholder="Enter a hint">
+            </div>
+            <div>
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    {% if output %}
+    <div class="questions-section">
+        <h3>Questions</h3>
+        <textarea rows="10" cols="50" disabled readonly>{{ output }}</textarea>
+    </div>
+    {% endif %}
+</body>
+</html>

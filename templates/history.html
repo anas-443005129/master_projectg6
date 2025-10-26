@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My History - DevOps Advisor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=111) }}">
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+    
+    <div class="header">
+        <h2>🕘 My History</h2>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:0.95rem; color:#334;"><strong>{{ current_user.email }}</strong></span>
+            <a href="{{ url_for('index') }}" class="btn" style="text-decoration:none;">← Back to Main</a>
+            <a href="{{ url_for('logout') }}" id="logout-link" class="btn" style="text-decoration:none;">Logout</a>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 1400px;">
+        <div class="history-page-card">
+            <div class="history-toolbar">
+                <div class="filters">
+                    <button class="chip active" data-filter="all">All</button>
+                    <button class="chip" data-filter="cost">Cost</button>
+                    <button class="chip" data-filter="performance">Performance</button>
+                    <button class="chip" data-filter="structure">Project Structure</button>
+                    <button class="chip" data-filter="terraform">Terraform</button>
+                    <button class="chip" data-filter="cli">Infra CLI</button>
+                </div>
+                <div class="tools" style="display:flex; gap:8px; align-items:center;">
+                    <a class="btn-sm" href="{{ url_for('history_export') }}">Export JSON</a>
+                    <button class="btn-sm" id="expand-all">Expand all</button>
+                    <button class="btn-sm" id="collapse-all">Collapse all</button>
+                </div>
+            </div>
+            <div id="history-list" class="history-page-list">
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    Loading history...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='Jscrpt.js', v=106) }}"></script>
+    <script>
+        // Auto-load history on page load
+        $(document).ready(function() {
+            loadHistory();
+        });
+    </script>
+</body>
+</html>

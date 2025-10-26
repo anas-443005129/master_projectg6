@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ 'Register' if mode=='register' else 'Login' }} - DevOps Advisor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=102) }}">
+  <style>
+    .auth-container{max-width:420px;margin:48px auto;background:#ffffff;border-radius:12px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+    .auth-container h2{margin-top:0}
+    .auth-container label{display:block;margin:12px 0 6px;font-weight:600}
+    .auth-container input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
+    .auth-actions{margin-top:16px;display:flex;gap:12px;align-items:center}
+    .btn-primary{background:#2d6cdf;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    .alt{font-size:0.9rem}
+    .flash{margin:8px 0;color:#b00020}
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <h2>{{ 'Create your account' if mode=='register' else 'Welcome back' }}</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('register' if mode=='register' else 'login') }}">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required>
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required>
+
+      <div class="auth-actions">
+        <button class="btn-primary" type="submit">{{ 'Sign up' if mode=='register' else 'Sign in' }}</button>
+        {% if mode=='register' %}
+          <div class="alt">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></div>
+        {% else %}
+          <div class="alt">New here? <a href="{{ url_for('register') }}">Create an account</a></div>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</body>
+</html>

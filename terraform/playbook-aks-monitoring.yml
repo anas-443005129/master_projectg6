@@ -1,0 +1,89 @@
+---
+- name: Install Helm and Deploy Prometheus & Grafana on AKS
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    kubeconfig_path: "{{ lookup('env','KUBECONFIG') | default('~/.kube/config', true) }}"
+    namespace: monitoring
+    grafana_admin_user: admin
+    grafana_admin_password: admin123
+    prometheus_storage: 10Gi
+
+  tasks:
+
+    - name: Ensure curl is installed
+      package:
+        name: curl
+        state: present
+
+    - name: Download Helm install script
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: '0755'
+
+    - name: Install Helm
+      command: /tmp/get_helm.sh
+      args:
+        creates: /usr/local/bin/helm
+
+    - name: Add Prometheus Helm repo
+      kubernetes.core.helm_repository:
+        name: prometheus-community
+        repo_url: https://prometheus-community.github.io/helm-charts
+
+    - name: Add Grafana Helm repo
+      kubernetes.core.helm_repository:
+        name: grafana
+        repo_url: https://grafana.github.io/helm-charts
+
+    - name: Update Helm repos
+      kubernetes.core.helm:
+        name: ""
+        state: present
+        update_repo_cache: yes
+
+    - name: Create monitoring namespace
+      kubernetes.core.k8s:
+        state: present
+        kind: Namespace
+        name: "{{ namespace }}"
+        kubeconfig: "{{ kubeconfig_path }}"
+
+    - name: Install Prometheus (kube-prometheus-stack)
+      kubernetes.core.helm:
+        name: prometheus
+        chart_ref: prometheus-community/kube-prometheus-stack
+        release_namespace: "{{ namespace }}"
+        create_namespace: yes
+        state: present
+        kubeconfig: "{{ kubeconfig_path }}"
+        values:
+          prometheus:
+            prometheusSpec:
+              storageSpec:
+                volumeClaimTemplate:
+                  spec:
+                    accessModes: ["ReadWriteOnce"]
+                    resources:
+                      requests:
+                        storage: "{{ prometheus_storage }}"
+          alertmanager:
+            enabled: true
+
+    - name: Install Grafana
+      kubernetes.core.helm:
+        name: grafana
+        chart_ref: grafana/grafana
+        release_namespace: "{{ namespace }}"
+        create_namespace: yes
+        state: present
+        kubeconfig: "{{ kubeconfig_path }}"
+        values:
+          adminUser: "{{ grafana_admin_user }}"
+          adminPassword: "{{ grafana_admin_password }}"
+          service:
+            type: LoadBalancer
+

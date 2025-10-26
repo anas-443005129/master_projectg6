@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DevOps Best Practices Advisor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=111) }}">
+</head>
+<body>
+    <div id="toast-container"></div>
+    
+    <div class="header">
+        <h2>DevOps Best Practices Advisor</h2>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:0.95rem; color:#334;"><strong>{{ current_user.email }}</strong></span>
+            <a href="{{ url_for('history_page') }}" class="btn" style="text-decoration:none;">🕘 My History</a>
+            <a href="{{ url_for('logout') }}" id="logout-link" class="btn" style="text-decoration:none;">Logout</a>
+        </div>
+    </div>
+    <div class="container">
+        <form id="generate-form">
+                <label>Choose Cloud Provider</label>
+                <div class="btn-group" id="provider-group">
+                    {% for p in providers %}
+                        <button type="button" class="btn provider-btn" data-value="{{ p }}">{{ p }}</button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" id="provider" name="provider" value="{{ providers[0] }}">
+                <br>
+                <div class="scale-row">
+                    <label>Scale tier</label>
+                    <div class="btn-group" id="scale-group">
+                        {% for s in scales %}
+                            {% set label = s.split('(')[0].strip() %}
+                            {% set range = s.split('(')[1].split(')')[0] %}
+                            <button type="button" class="btn scale-btn" data-value="{{ s }}">
+                                <div class="scale-title">{{ label }}</div>
+                                <div class="scale-range">{{ '(' ~ range ~ ')' }}</div>
+                            </button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" id="scale" name="scale" value="{{ scales[0] }}">
+                </div>
+                <br>
+                <div class="scale-row">
+                    <label>Loading pressure</label>
+                    <div class="btn-group" id="loading-group">
+                        {% for lp in loading_pressure %}
+                            <button type="button" class="btn loading-btn" data-value="{{ lp }}">{{ lp }}</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" id="loading_pressure" name="loading_pressure" value="{{ loading_pressure[0] }}">
+                </div>
+                <br>
+                <label for="country">Your Country / Region </label>
+                <input type="text" id="country" name="country" placeholder="e.g., Saudi Arabia, UAE, Egypt, USA, Germany..." />
+                <br>
+                <label for="description">Project description</label>
+                <textarea id="description" name="description" rows="4" placeholder=" Write as much as possible about the project you want. Include: what the app does, tech stack (frontend/backend frameworks), database type, if you need containers, static files, caching, authentication, third-party integrations, compliance needs, expected traffic, etc. The more detail you provide, the better the infrastructure recommendations!"></textarea>
+                <br>
+                <div class="button-row">
+                    <button type="button" id="generate-cost-btn" class="primary"> Cost Best Practices</button>
+                    <button type="button" id="generate-performance-btn" class="secondary"> Performance Best Practices</button>
+                    <button type="button" id="generate-structure-btn" class="structure-btn">📁 Project Structure</button>
+                    <button type="button" id="generate-cli-btn" class="cli-btn" style="display: none;"> Build Infra CLI (Linux)</button>
+                    <button type="button" id="generate-terraform-btn" class="secondary" style="display: none;">Generate Infrastructure (Terraform)</button>
+                </div>
+                <div style="text-align: center; margin-top: 12px;">
+                    <button type="button" id="clear-all-btn" class="clear-btn" style="display: none;">🗑️ Clear All Results</button>
+                </div>
+        </form>
+    </div>
+    <br>
+
+    <div class="container comments-container" style="display: none;">
+        <div id="comments">
+            <h2>Solutions</h2>
+            <pre id="comments-text"></pre>
+        </div>
+    </div>
+    <br>
+    <div class="results-grid">
+        <div class="solutions-card hidden" id="cost-card">
+            <h3>Cost Best Practices</h3>
+            <div id="cost-text" class="solutions-text" role="region" aria-live="polite">
+                Cost best practices and SAR price range will appear here after you click "Cost Best Practices".
+            </div>
+            <div class="solutions-actions">
+                <button id="copy-cost" type="button" class="btn">Copy</button>
+                <a id="download-cost" class="btn" href="#" download="cost_best_practices.txt">Download</a>
+            </div>
+        </div>
+
+        <div class="solutions-card hidden" id="performance-card">
+            <h3>Performance Best Practices</h3>
+            <div id="performance-text" class="solutions-text" role="region" aria-live="polite">
+                Performance best practices will appear here after you click "Performance Best Practices".
+            </div>
+            <div class="solutions-actions">
+                <button id="copy-performance" type="button" class="btn">Copy</button>
+                <a id="download-performance" class="btn" href="#" download="performance_best_practices.txt">Download</a>
+            </div>
+        </div>
+
+        <div class="solutions-card hidden" id="structure-card">
+            <h3>Project Structure</h3>
+            <div id="structure-text" class="solutions-text" role="region" aria-live="polite">
+                Your project folder structure will appear here after you click "Project Structure".
+            </div>
+            <div class="solutions-actions">
+                <button id="copy-structure" type="button" class="btn">Copy</button>
+                <a id="download-structure" class="btn" href="#" download="project_structure.txt">Download</a>
+            </div>
+        </div>
+
+        <div class="solutions-card hidden" id="terraform-card">
+            <h3>Infrastructure as Code (Terraform Modules)</h3>
+            <div id="terraform-text" class="solutions-text" role="region" aria-live="polite">
+                Your Terraform infrastructure code will appear here after you click "Generate Infrastructure".
+            </div>
+            <div class="solutions-actions">
+                <button id="copy-terraform" type="button" class="btn">Copy</button>
+                <a id="download-terraform" class="btn" href="#" download="infrastructure.tf">Download</a>
+            </div>
+        </div>
+
+        <div class="solutions-card hidden" id="cli-card">
+            <h3>Infrastructure CLI (Linux)</h3>
+            <div id="cli-text" class="solutions-text" role="region" aria-live="polite">
+                Your Linux CLI script will appear here after you click "Build Infra CLI (Linux)".
+            </div>
+            <div class="solutions-actions">
+                <button id="copy-cli" type="button" class="btn">Copy</button>
+                <a id="download-cli" class="btn" href="#" download="infra_build.sh">Download</a>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='Jscrpt.js', v=106) }}"></script>
+</body>
+</html>
