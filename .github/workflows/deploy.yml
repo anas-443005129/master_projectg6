@@ -17,6 +17,9 @@ jobs:
     
     - name: Build and Push
       run: |
+        echo "ACR Name: ${{ secrets.EXISTING_ACR_NAME }}"
+        echo "Image Name: ${{ secrets.IMAGE_NAME }}"
+        echo "Full image tag: ${{ secrets.EXISTING_ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:latest"
         docker build -t ${{ secrets.EXISTING_ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:latest .
         az acr login --name ${{ secrets.EXISTING_ACR_NAME }}
         docker push ${{ secrets.EXISTING_ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:latest
