@@ -161,11 +161,11 @@ jobs:
     
     - name: Get Application Status
       run: |
-        echo "🚀 DEPLOYMENT COMPLETED SUCCESSFULLY!"
+        echo " DEPLOYMENT COMPLETED SUCCESSFULLY!"
         echo ""
         
         # Wait a bit for LoadBalancer IP assignment
-        echo "⏳ Waiting for LoadBalancer IP assignment..."
+        echo " Waiting for LoadBalancer IP assignment..."
         sleep 30
         
         # Get external IP with retry
@@ -180,38 +180,38 @@ jobs:
         
         echo "════════════════════════════════════════"
         if [ -n "$EXTERNAL_IP" ]; then
-          echo "🌐 YOUR APPLICATION IS LIVE!"
+          echo " YOUR APPLICATION IS LIVE!"
           echo ""
-          echo "   📱 URL: http://$EXTERNAL_IP"
-          echo "   🎯 Access your DevOps Advisor app now!"
+          echo "    URL: http://$EXTERNAL_IP"
+          echo "    Access your DevOps Advisor app now!"
           echo ""
         else
-          echo "⏳ LoadBalancer IP is still being assigned..."
+          echo " LoadBalancer IP is still being assigned..."
           echo "   Check in a few minutes with:"
           echo "   kubectl get svc devops-advisor-lb -n devops-advisor"
           echo ""
         fi
         
         # Show pod status
-        echo "📊 APPLICATION STATUS:"
+        echo " APPLICATION STATUS:"
         kubectl get pods -n devops-advisor --no-headers | while read pod status; do
           if [[ $status == *"Running"* ]]; then
-            echo "   ✅ $pod"
+            echo "    $pod"
           else
-            echo "   ⏳ $pod - $status"
+            echo "    $pod - $status"
           fi
         done
         echo ""
         
         # Show any issues in logs
-        echo "🔍 APPLICATION HEALTH CHECK:"
+        echo " APPLICATION HEALTH CHECK:"
         APP_LOGS=$(kubectl logs -n devops-advisor -l app=devops-advisor --tail=3 2>/dev/null || echo "")
         if [[ $APP_LOGS == *"error"* ]] || [[ $APP_LOGS == *"Error"* ]]; then
-          echo "   ⚠️  Some errors detected in logs"
+          echo "     Some errors detected in logs"
           echo "   Recent logs: $APP_LOGS"
         else
-          echo "   ✅ Application appears healthy"
+          echo "   Application appears healthy"
         fi
         
         echo "════════════════════════════════════════"
-        echo "🎉 DEPLOYMENT SUCCESSFUL!"
+        echo " DEPLOYMENT SUCCESSFUL!"
