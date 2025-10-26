@@ -11,7 +11,7 @@ from flask_login import (
     current_user,
     UserMixin,
 )
-from sqlalchemy import create_engine, Integer, String, Text, DateTime, ForeignKey, or_
+from sqlalchemy import create_engine, Integer, String, Text, DateTime, ForeignKey, or_, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 from openai import OpenAI
 
@@ -97,9 +97,19 @@ engine = create_engine(DB_URL, pool_pre_ping=True)
 
 # Create tables if they don't exist
 try:
+    print(">>> Creating database tables...")
     Base.metadata.create_all(engine)
+    print(">>> Database tables created successfully!")
+    
+    # Test database connection
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT 1"))
+        print(">>> Database connection test successful!")
+        
 except Exception as _e:
-    print(">>> WARNING: Could not create tables:", _e)
+    print(f">>> ERROR: Database setup failed: {_e}")
+    print(f">>> Database URL: {DB_URL}")
+    # Don't exit, let the app try to continue
 
 # ---------------------------
 # Auth setup (Flask-Login)
