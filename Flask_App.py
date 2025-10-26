@@ -87,8 +87,12 @@ def _build_db_url_from_env() -> str:
     host = os.environ.get("DB_HOST", "localhost")
     port = os.environ.get("DB_PORT", "5432")
     user = os.environ.get("DB_USER", "postgres")
-    password = os.environ.get("DB_PASSWORD", "SecurePassword123")
+    password = os.environ.get("DB_PASSWORD")  # No default - must be provided via secret
     name = os.environ.get("DB_NAME", "devops_advisor_db")
+    
+    if not password:
+        raise ValueError("DB_PASSWORD environment variable is required and must be provided via Kubernetes secret")
+    
     return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{name}"
 
 
