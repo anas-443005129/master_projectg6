@@ -1,0 +1,16 @@
+# Normalize line endings for cross-OS collaboration
+* text=auto
+
+# Always commit LF for these text-based files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+Dockerfile text eol=lf
+
+# Treat common binary formats as binary (no line ending changes)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
