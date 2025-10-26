@@ -77,6 +77,85 @@ jobs:
         az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks
         az aks update -n devopsa-aks -g rg-devops-group6 --attach-acr group6acr
     
+    - name: Setup Helm (for ingress and monitoring)
+      uses: azure/setup-helm@v4
+
+    - name: Enable AGIC (Application Gateway Ingress Controller)
+      run: |
+        set -e
+        echo "Checking if AGIC addon is already enabled..."
+        ENABLED=$(az aks show -g rg-devops-group6 -n devopsa-aks --query "addonProfiles.ingressApplicationGateway.enabled" -o tsv || echo "false")
+        if [ "$ENABLED" = "true" ]; then
+          echo "AGIC already enabled. Skipping."
+        else
+          echo "Enabling AGIC addon..."
+          az aks enable-addons \
+            -a ingress-appgw \
+            -n devopsa-aks \
+            -g rg-devops-group6 \
+            --appgw-name myAppGwG6 \
+            --appgw-subnet-cidr "10.225.0.0/16"
+          echo "AGIC enabled."
+        fi
+
+    - name: Install ingress-nginx via Helm (idempotent)
+      run: |
+        set -e
+        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx || true
+        helm repo update
+        # Install/upgrade NGINX Ingress Controller; safe to re-run
+        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+          --namespace ingress-nginx \
+          --create-namespace \
+          --set controller.service.type=LoadBalancer
+
+    - name: Install Monitoring (Prometheus + Grafana)
+      env:
+        GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+      run: |
+        set -e
+        # Create monitoring namespace
+        kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+        # Add Helm repos
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+        helm repo add grafana https://grafana.github.io/helm-charts || true
+        helm repo update
+
+        # Install kube-prometheus-stack without Grafana (we deploy Grafana separately with custom values)
+        helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+          --namespace monitoring \
+          --create-namespace \
+          --set grafana.enabled=false
+
+        # Prepare Grafana admin secret (uses GitHub secret if provided, otherwise generate a strong password)
+        PASS="$GRAFANA_ADMIN_PASSWORD"
+        if [ -z "$PASS" ]; then
+          echo "No GRAFANA_ADMIN_PASSWORD secret provided. Generating a strong password..."
+          PASS=$(openssl rand -base64 18)
+        fi
+        kubectl -n monitoring create secret generic grafana-admin-credentials \
+          --from-literal=admin-user=admin \
+          --from-literal=admin-password="$PASS" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+        # Deploy Grafana with your custom values
+        helm upgrade --install grafana grafana/grafana \
+          --namespace monitoring \
+          --create-namespace \
+          -f values-grafana.yaml
+
+    - name: Show Monitoring Access Info
+      run: |
+        # Print Grafana external IP if available
+        GIP=$(kubectl get svc grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+        if [ -n "$GIP" ]; then
+          echo "Grafana is reachable at: http://$GIP"
+          echo "Credentials -> user: admin | password: (from secret grafana-admin-credentials)"
+        else
+          echo "Grafana LoadBalancer IP pending. Check later with: kubectl get svc grafana -n monitoring"
+        fi
+    
     - name: Deploy App
       run: |
         kubectl create namespace devops-advisor --dry-run=client -o yaml | kubectl apply -f -
