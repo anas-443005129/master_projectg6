@@ -109,26 +109,14 @@ jobs:
           --create-namespace \
           --set controller.service.type=LoadBalancer
 
-    - name: Install Monitoring (Prometheus + Grafana)
+    - name: Prepare Grafana admin secret (namespace + secret)
       env:
         GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
       run: |
         set -e
-        # Create monitoring namespace
+        # Ensure monitoring namespace exists (idempotent)
         kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
-
-        # Add Helm repos
-        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
-        helm repo add grafana https://grafana.github.io/helm-charts || true
-        helm repo update
-
-        # Install kube-prometheus-stack without Grafana (we deploy Grafana separately with custom values)
-        helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
-          --namespace monitoring \
-          --create-namespace \
-          --set grafana.enabled=false
-
-        # Prepare Grafana admin secret (uses GitHub secret if provided, otherwise generate a strong password)
+        # Create or update the admin secret
         PASS="$GRAFANA_ADMIN_PASSWORD"
         if [ -z "$PASS" ]; then
           echo "No GRAFANA_ADMIN_PASSWORD secret provided. Generating a strong password..."
@@ -139,11 +127,16 @@ jobs:
           --from-literal=admin-password="$PASS" \
           --dry-run=client -o yaml | kubectl apply -f -
 
-        # Deploy Grafana with your custom values
-        helm upgrade --install grafana grafana/grafana \
-          --namespace monitoring \
-          --create-namespace \
-          -f values-grafana.yaml
+    - name: Install Monitoring via Ansible playbook
+      run: |
+        set -e
+        python3 -V || true
+        sudo apt-get update -y
+        sudo apt-get install -y python3-pip
+        pip3 install --user ansible kubernetes openshift pyyaml
+        ~/.local/bin/ansible-galaxy collection install kubernetes.core
+        # Run the playbook against localhost using existing kubeconfig
+        ~/.local/bin/ansible-playbook -i localhost, -c local deploy-monitoring.yml
 
     - name: Show Monitoring Access Info
       run: |

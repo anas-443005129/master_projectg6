@@ -1,0 +1,64 @@
+---
+- name: Deploy monitoring stack (Prometheus + Grafana) on AKS
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    kube_namespace: monitoring
+    prometheus_release_name: prometheus
+    grafana_release_name: grafana
+    prometheus_chart: prometheus-community/kube-prometheus-stack
+    grafana_chart: grafana/grafana
+    prometheus_values_file: values-prometheus.yaml
+    grafana_values_file: values-grafana.yaml
+
+  tasks:
+    - name: Create monitoring namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ kube_namespace }}"
+
+    - name: Add Helm repo for prometheus-community
+      kubernetes.core.helm_repository:
+        name: prometheus-community
+        repo_url: https://prometheus-community.github.io/helm-charts
+        force_update: true
+
+    - name: Add Helm repo for grafana
+      kubernetes.core.helm_repository:
+        name: grafana
+        repo_url: https://grafana.github.io/helm-charts
+        force_update: true
+
+    - name: Deploy Prometheus stack
+      kubernetes.core.helm:
+        name: "{{ prometheus_release_name }}"
+        chart_ref: "{{ prometheus_chart }}"
+        release_namespace: "{{ kube_namespace }}"
+        create_namespace: false
+        values_files:
+          - "{{ prometheus_values_file }}"
+        wait: true
+
+    - name: Deploy Grafana
+      kubernetes.core.helm:
+        name: "{{ grafana_release_name }}"
+        chart_ref: "{{ grafana_chart }}"
+        release_namespace: "{{ kube_namespace }}"
+        create_namespace: false
+        values_files:
+          - "{{ grafana_values_file }}"
+        wait: true
+
+    - name: Display deployed services
+      command: kubectl get svc -n {{ kube_namespace }}
+      register: svc_output
+
+    - debug:
+        var: svc_output.stdout_lines
+

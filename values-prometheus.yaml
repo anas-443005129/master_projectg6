@@ -1,0 +1,238 @@
+# Prometheus configuration for AKS deployment
+# Compatible with prometheus-community/kube-prometheus-stack
+
+# ─────────────────────────────────────────────
+# Namespace & global options
+# ─────────────────────────────────────────────
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# ─────────────────────────────────────────────
+# Prometheus Operator configuration
+# ─────────────────────────────────────────────
+prometheusOperator:
+  enabled: true
+  createCustomResource: true
+  tls:
+    enabled: false
+
+# ─────────────────────────────────────────────
+# Alertmanager configuration
+# (Slack via mounted Secret + CallMeBot webhook + routing)
+# Now exposed with a public EXTERNAL-IP (LoadBalancer)
+# ─────────────────────────────────────────────
+alertmanager:
+  enabled: true
+
+  # EXTERNAL IP via Azure Load Balancer
+  service:
+    type: LoadBalancer
+    port: 80          # nice URL: http://<external-ip>/
+    targetPort: 9093  # Alertmanager UI port in the pod
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+    # (Optional) pin a static Azure Public IP you created in the AKS node RG
+    # loadBalancerIP: "<PUBLIC_IP_ADDRESS>"
+    # (Optional, recommended) restrict who can reach it
+    # loadBalancerSourceRanges:
+    #   - "203.0.113.10/32"
+    #   - "198.51.100.0/24"
+
+  alertmanagerSpec:
+    replicas: 1
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+    # Mount the Slack webhook Secret into /etc/alertmanager/secrets/
+    # Secret must exist:
+    #   kubectl -n monitoring create secret generic slack-webhook-url \
+    #     --from-literal=url='<YOUR_SLACK_WEBHOOK>'
+    secrets:
+      - slack-webhook-url
+
+  # Native Alertmanager config (routes/receivers)
+  config:
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 2h
+      receiver: 'slack-default'
+      routes:
+        # Customer-impacting web issues → CallMeBot (via adapter)
+        - matchers:
+            - severity =~ "critical|page"
+            - team = "web"
+          receiver: 'callmebot'
+          continue: false
+
+        # External pipeline alerts (posted by GitHub Actions)
+        - matchers:
+            - source = "github-actions"
+          receiver: 'slack-default'
+          continue: false
+
+    receivers:
+      - name: 'slack-default'
+        slack_configs:
+          - send_resolved: true
+            # Read Slack webhook URL from the mounted Secret file
+            # Secret: slack-webhook-url, key: url -> /etc/alertmanager/secrets/slack-webhook-url/url
+            api_url_file: /etc/alertmanager/secrets/slack-webhook-url/url
+            title: '[[{{ .CommonLabels.severity | default "info" | toUpper }}]] {{ .CommonLabels.alertname }} ({{ .Status }})'
+            text: >-
+              {{ range .Alerts }}
+              *{{ .Annotations.summary | default .Annotations.description | default .Labels.alertname }}*
+              ns={{ .Labels.namespace | default "n/a" }}
+              pod={{ .Labels.pod | default "n/a" }}
+              {{ end }}
+
+      - name: 'callmebot'
+        webhook_configs:
+          - url: "http://callmebot-adapter.monitoring.svc.cluster.local:8080/webhook"
+            send_resolved: true
+
+# ─────────────────────────────────────────────
+# Prometheus main configuration
+# ─────────────────────────────────────────────
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    replicas: 1
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+          storageClassName: default
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+
+  # Public EXTERNAL-IP for Prometheus
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 9090
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+
+# ─────────────────────────────────────────────
+# Node exporter configuration
+# ─────────────────────────────────────────────
+nodeExporter:
+  enabled: true
+  tolerations:
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+# ─────────────────────────────────────────────
+# Kube-state metrics configuration
+# ─────────────────────────────────────────────
+kubeStateMetrics:
+  enabled: true
+
+# ─────────────────────────────────────────────
+# Grafana disabled here (you have separate release)
+# ─────────────────────────────────────────────
+grafana:
+  enabled: false
+
+# ─────────────────────────────────────────────
+# Additional exporters (optional)
+# ─────────────────────────────────────────────
+kubeControllerManager:
+  enabled: true
+kubeScheduler:
+  enabled: true
+kubeProxy:
+  enabled: true
+
+# ─────────────────────────────────────────────
+# Custom alerting rules (ingress/web + pipeline stub)
+# ─────────────────────────────────────────────
+additionalPrometheusRulesMap:
+  web-and-pipeline:
+    groups:
+      - name: ingress-web-health
+        rules:
+          # High 5xx error rate at ingress (>1% for 5m)
+          - alert: IngressHigh5xxRate
+            expr: |
+              sum(rate(nginx_ingress_controller_requests{status=~"5.."}[5m]))
+              /
+              sum(rate(nginx_ingress_controller_requests[5m])) > 0.01
+            for: 5m
+            labels:
+              severity: critical
+              team: web
+            annotations:
+              summary: "High 5xx error rate on ingress"
+              description: "5xx > 1% (5m window)."
+
+          # High latency p95 (>1s for 5m)
+          - alert: IngressHighLatencyP95
+            expr: |
+              histogram_quantile(0.95,
+                sum(rate(nginx_ingress_controller_response_duration_seconds_bucket[5m]))
+                by (le)
+              ) > 1
+            for: 5m
+            labels:
+              severity: critical
+              team: web
+            annotations:
+              summary: "High p95 latency at ingress"
+              description: "p95 response time > 1s (5m)."
+
+      - name: k8s-web-health
+        rules:
+          # Web deployments unavailable replicas
+          - alert: WebDeploymentUnavailable
+            expr: |
+              kube_deployment_status_replicas_unavailable{deployment=~"frontend-deployment|backend-deployment"} > 0
+            for: 3m
+            labels:
+              severity: critical
+              team: web
+            annotations:
+              summary: "Web deployment unavailable"
+              description: "One or more web deployments have unavailable replicas."
+
+          # Pods CrashLooping / frequent restarts
+          - alert: PodCrashLooping
+            expr: increase(kube_pod_container_status_restarts_total[5m]) > 5
+            for: 5m
+            labels:
+              severity: warning
+              team: web
+            annotations:
+              summary: "Pod restarting frequently"
+              description: "Container restarts > 5 in the last 5 minutes."
+
+      # External pipeline alerts are posted directly to Alertmanager v2 by GitHub Actions
+      - name: pipeline-external
+        rules:
+          - alert: PipelineFailed
+            expr: vector(1) == 0   # no-op placeholder
+            labels:
+              severity: warning
+              source: github-actions
+            annotations:
+              summary: "Pipeline failure (external)"
+              description: "Triggered by GitHub Actions posting to Alertmanager v2."
+
