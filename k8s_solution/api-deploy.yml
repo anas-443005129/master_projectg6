@@ -51,20 +51,30 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_DB
+          # Added probes that return 200 to make AGIC and K8s health checks pass
+          startupProbe:
+            httpGet:
+              path: /auth/login
+              port: 5001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 20
           readinessProbe:
             httpGet:
-              path: /
+              path: /auth/login
               port: 5001
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /
+              path: /auth/login
               port: 5001
             initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 3
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
             requests:
               cpu: "250m"
