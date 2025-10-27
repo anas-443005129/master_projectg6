@@ -158,6 +158,23 @@ jobs:
             --appgw-subnet-cidr "10.225.0.0/16"
           echo "AGIC enabled."
         fi
+
+    - name: Restart app after AGIC and wait
+      run: |
+       set -e
+       kubectl rollout restart deployment/devops-advisor-app -n devops-advisor
+       kubectl rollout status deployment/devops-advisor-app -n devops-advisor --timeout=300s
+
+       # Optional: wait for AGIC to provision public IP
+       for i in {1..20}; do
+        IP=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+        if [ -n "$IP" ]; then
+         echo "AGIC public IP: $IP"
+         break
+        fi
+        echo "Waiting for AGIC IP..."
+        sleep 15
+       done
     
     - name: Get Application Status
       run: |
