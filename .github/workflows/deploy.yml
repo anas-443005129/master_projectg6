@@ -51,19 +51,7 @@ jobs:
         cd terraform
         terraform init -upgrade
         
-        # Destroy any existing resources first to start fresh
-        terraform destroy -auto-approve -lock-timeout=$TF_LOCK_TIMEOUT \
-          -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
-          -var="resource_group_name=rg-devops-group6" \
-          -var="resource_group_location=polandcentral" \
-          -var="resource_prefix=devopsa" \
-          -var="environment=dev" \
-          -var="managed_disk_name=app-data" \
-          -var="disk_size_gb=20" \
-          -var="storage_account_type=Standard_LRS" \
-          -var="author=group6" || true
-        
-        # Now create everything fresh
+        # Apply changes only (no destroy)
         terraform apply -auto-approve -parallelism=20 -refresh=false -lock-timeout=$TF_LOCK_TIMEOUT \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
