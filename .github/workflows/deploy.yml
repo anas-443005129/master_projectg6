@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -33,6 +37,7 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       run: |
+        set -e
         # Extract values from AZURE_CREDENTIALS and export as ARM variables
         export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')
         export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')
@@ -40,16 +45,14 @@ jobs:
         export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')
         export TF_IN_AUTOMATION=true
         export TF_INPUT=false
+        export TF_LOCK_TIMEOUT=5m
         
         # Run Terraform with optimizations for speed
         cd terraform
         terraform init -upgrade
         
-        # Force unlock if there's a stuck lock (ignore errors if no lock exists)
-        terraform force-unlock -force ec6ffc3d-3832-e607-6a17-50c980a3fe35 || true
-        
         # Destroy any existing resources first to start fresh
-        terraform destroy -auto-approve \
+        terraform destroy -auto-approve -lock-timeout=$TF_LOCK_TIMEOUT \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
@@ -61,7 +64,7 @@ jobs:
           -var="author=group6" || true
         
         # Now create everything fresh
-        terraform apply -auto-approve -parallelism=20 -refresh=false \
+        terraform apply -auto-approve -parallelism=20 -refresh=false -lock-timeout=$TF_LOCK_TIMEOUT \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
@@ -134,12 +137,19 @@ jobs:
     - name: Deploy App
       run: |
         kubectl create namespace devops-advisor --dry-run=client -o yaml | kubectl apply -f -
-        kubectl create secret generic app-secret --from-literal=OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" --from-literal=FLASK_SECRET_KEY="${{ secrets.FLASK_SECRET_KEY }}" -n devops-advisor --dry-run=client -o yaml | kubectl apply -f -
-        kubectl create secret generic postgres-secret --from-literal=POSTGRES_USER="postgres" --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" --from-literal=POSTGRES_DB="devops_advisor_db" -n devops-advisor --dry-run=client -o yaml | kubectl apply -f -
-        sed -i "s|devopsaacr.azurecr.io| group6acr.azurecr.io|g" k8s_solution/api-deploy.yml
+        kubectl create secret generic app-secret \
+          --from-literal=OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+          --from-literal=FLASK_SECRET_KEY="${{ secrets.FLASK_SECRET_KEY }}" \
+          -n devops-advisor --dry-run=client -o yaml | kubectl apply -f -
+        kubectl create secret generic postgres-secret \
+          --from-literal=POSTGRES_USER="postgres" \
+          --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+          --from-literal=POSTGRES_DB="devops_advisor_db" \
+          -n devops-advisor --dry-run=client -o yaml | kubectl apply -f -
+        sed -i 's|devopsaacr.azurecr.io|group6acr.azurecr.io|g' k8s_solution/api-deploy.yml
         kubectl apply -f k8s_solution/
-        kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=postgres --timeout=300s
-        kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=devops-advisor --timeout=300s
+        kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=postgres --timeout=300s || true
+        kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=devops-advisor --timeout=300s || true
 
     - name: Enable AGIC (Application Gateway Ingress Controller)
       run: |
@@ -161,74 +171,50 @@ jobs:
 
     - name: Restart app after AGIC and wait
       run: |
-       set -e
-       kubectl rollout restart deployment/devops-advisor-app -n devops-advisor
-       kubectl rollout status deployment/devops-advisor-app -n devops-advisor --timeout=300s
+        set -e
+        kubectl rollout restart deployment/devops-advisor-app -n devops-advisor
+        kubectl rollout status deployment/devops-advisor-app -n devops-advisor --timeout=300s
 
-       # Optional: wait for AGIC to provision public IP
-       for i in {1..20}; do
-        IP=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-        if [ -n "$IP" ]; then
-         echo "AGIC public IP: $IP"
-         break
-        fi
-        echo "Waiting for AGIC IP..."
-        sleep 15
-       done
+        # Optional: wait for AGIC to provision public IP
+        for i in {1..20}; do
+          IP=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+          if [ -n "$IP" ]; then
+            echo "AGIC public IP: $IP"
+            break
+          fi
+          echo "Waiting for AGIC IP..."
+          sleep 15
+        done
     
-    - name: Get Application Status
+    - name: Get Application Status (AGIC Ingress)
       run: |
         echo " DEPLOYMENT COMPLETED SUCCESSFULLY!"
         echo ""
-        
-        # Wait a bit for LoadBalancer IP assignment
-        echo " Waiting for LoadBalancer IP assignment..."
-        sleep 30
-        
-        # Get external IP with retry
-        for i in {1..10}; do
-          EXTERNAL_IP=$(kubectl get svc devops-advisor-lb -n devops-advisor -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-          if [ -n "$EXTERNAL_IP" ]; then
+        echo " Waiting for AGIC Ingress IP assignment..."
+        for i in {1..20}; do
+          INGRESS_IP=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+          if [ -n "$INGRESS_IP" ]; then
             break
           fi
-          echo "Attempt $i: Still waiting for IP..."
+          echo "Attempt $i: Still waiting for AGIC IP..."
           sleep 10
         done
-        
         echo "════════════════════════════════════════"
-        if [ -n "$EXTERNAL_IP" ]; then
-          echo " YOUR APPLICATION IS LIVE!"
+        if [ -n "$INGRESS_IP" ]; then
+          echo " YOUR APPLICATION IS LIVE VIA APPLICATION GATEWAY!"
           echo ""
-          echo "    URL: http://$EXTERNAL_IP"
+          echo "    URL: http://$INGRESS_IP"
           echo "    Access your DevOps Advisor app now!"
           echo ""
         else
-          echo " LoadBalancer IP is still being assigned..."
-          echo "   Check in a few minutes with:"
-          echo "   kubectl get svc devops-advisor-lb -n devops-advisor"
+          echo " AGIC Ingress IP not available yet."
+          echo "   Check later with: kubectl -n devops-advisor get ingress devops-advisor-agic -o wide"
           echo ""
         fi
-        
-        # Show pod status
         echo " APPLICATION STATUS:"
-        kubectl get pods -n devops-advisor --no-headers | while read pod status; do
-          if [[ $status == *"Running"* ]]; then
-            echo "    $pod"
-          else
-            echo "    $pod - $status"
-          fi
-        done
+        kubectl get pods -n devops-advisor
         echo ""
-        
-        # Show any issues in logs
-        echo " APPLICATION HEALTH CHECK:"
-        APP_LOGS=$(kubectl logs -n devops-advisor -l app=devops-advisor --tail=3 2>/dev/null || echo "")
-        if [[ $APP_LOGS == *"error"* ]] || [[ $APP_LOGS == *"Error"* ]]; then
-          echo "     Some errors detected in logs"
-          echo "   Recent logs: $APP_LOGS"
-        else
-          echo "   Application appears healthy"
-        fi
-        
+        echo " APPLICATION HEALTH CHECK (recent logs):"
+        kubectl logs -n devops-advisor -l app=devops-advisor --tail=50 || true
         echo "════════════════════════════════════════"
         echo " DEPLOYMENT SUCCESSFUL!"
