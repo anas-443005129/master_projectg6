@@ -80,24 +80,6 @@ jobs:
     - name: Setup Helm (for ingress and monitoring)
       uses: azure/setup-helm@v4
 
-    - name: Enable AGIC (Application Gateway Ingress Controller)
-      run: |
-        set -e
-        echo "Checking if AGIC addon is already enabled..."
-        ENABLED=$(az aks show -g rg-devops-group6 -n devopsa-aks --query "addonProfiles.ingressApplicationGateway.enabled" -o tsv || echo "false")
-        if [ "$ENABLED" = "true" ]; then
-          echo "AGIC already enabled. Skipping."
-        else
-          echo "Enabling AGIC addon..."
-          az aks enable-addons \
-            -a ingress-appgw \
-            -n devopsa-aks \
-            -g rg-devops-group6 \
-            --appgw-name myAppGwG6 \
-            --appgw-subnet-cidr "10.225.0.0/16"
-          echo "AGIC enabled."
-        fi
-
     - name: Install ingress-nginx via Helm (idempotent)
       run: |
         set -e
@@ -158,6 +140,24 @@ jobs:
         kubectl apply -f k8s_solution/
         kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=postgres --timeout=300s
         kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=devops-advisor --timeout=300s
+
+    - name: Enable AGIC (Application Gateway Ingress Controller)
+      run: |
+        set -e
+        echo "Checking if AGIC addon is already enabled..."
+        ENABLED=$(az aks show -g rg-devops-group6 -n devopsa-aks --query "addonProfiles.ingressApplicationGateway.enabled" -o tsv || echo "false")
+        if [ "$ENABLED" = "true" ]; then
+          echo "AGIC already enabled. Skipping."
+        else
+          echo "Enabling AGIC addon..."
+          az aks enable-addons \
+            -a ingress-appgw \
+            -n devopsa-aks \
+            -g rg-devops-group6 \
+            --appgw-name myAppGwG6 \
+            --appgw-subnet-cidr "10.225.0.0/16"
+          echo "AGIC enabled."
+        fi
     
     - name: Get Application Status
       run: |
