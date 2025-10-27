@@ -24,3 +24,18 @@ tf.plan
 *.log
 .terraform/
 .terraform.lock.hcl
+
+
+# Docker
+docker-compose.override.yml
+docker-compose.dev.yml
+/.db_data/
+docker-compose.wsl.yml
+
+# Local editor and OS
+.vscode/
+
+# DB backups (keep locally, don't commit)
+backups/
+*.sql
+.env.example
