@@ -45,6 +45,25 @@ jobs:
         export TF_IN_AUTOMATION=true
         export TF_INPUT=false
         
+        # Proactively clear any stale lease on the remote tfstate blob (best-effort)
+        az account set --subscription "$ARM_SUBSCRIPTION_ID" || true
+        LEASE_STATE=$(az storage blob show \
+          --account-name group6sa \
+          --container-name tfstate \
+          --name terraform.tfstate \
+          --auth-mode login \
+          --query 'properties.lease.state' -o tsv 2>/dev/null || echo "")
+        if [ "$LEASE_STATE" = "leased" ]; then
+          echo "Breaking stale lease on tfstate blob..."
+          az storage blob lease break \
+            --account-name group6sa \
+            --container-name tfstate \
+            --blob terraform.tfstate \
+            --auth-mode login \
+            --break-period 0 || true
+          sleep 5
+        fi
+
         # Run Terraform with optimizations for speed
         cd terraform
         terraform init -upgrade
@@ -62,7 +81,7 @@ jobs:
           -var="author=group6" || true
         
         # Now create everything fresh
-        terraform apply -auto-approve -parallelism=20 -refresh=false -lock=false \
+        terraform apply -auto-approve -parallelism=20 -refresh=false \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
