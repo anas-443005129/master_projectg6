@@ -49,11 +49,8 @@ jobs:
         cd terraform
         terraform init -upgrade
         
-        # Force unlock if there's a stuck lock (ignore errors if no lock exists)
-        terraform force-unlock -force ec6ffc3d-3832-e607-6a17-50c980a3fe35 || true
-        
-        # Destroy any existing resources first to start fresh
-        terraform destroy -auto-approve \
+        # Destroy any existing resources first to start fresh (ignore state locking to avoid stalls)
+        terraform destroy -auto-approve -lock=false \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
@@ -65,7 +62,7 @@ jobs:
           -var="author=group6" || true
         
         # Now create everything fresh
-        terraform apply -auto-approve -parallelism=20 -refresh=false \
+        terraform apply -auto-approve -parallelism=20 -refresh=false -lock=false \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
