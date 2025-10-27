@@ -4,7 +4,7 @@ metadata:
   name: devops-advisor-agic
   namespace: devops-advisor
   annotations:
-    appgw.ingress.kubernetes.io/health-probe-path: /auth/login
+    appgw.ingress.kubernetes.io/health-probe-path: /
     appgw.ingress.kubernetes.io/backend-path-prefix: /
 spec:
   ingressClassName: azure-application-gateway
