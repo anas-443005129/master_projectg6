@@ -69,7 +69,7 @@ jobs:
             az storage blob lease break \
               --account-name "$TFSTATE_SA" \
               --container-name "$TFSTATE_CONTAINER" \
-              --blob "$TFSTATE_BLOB" \
+              --name "$TFSTATE_BLOB" \
               --account-key "$SA_KEY" \
               --break-period 0 || true
             # Give Azure a moment to release the lease fully
