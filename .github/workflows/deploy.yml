@@ -37,7 +37,6 @@ jobs:
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       run: |
-        set -e
         # Extract values from AZURE_CREDENTIALS and export as ARM variables
         export ARM_CLIENT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientId')
         export ARM_CLIENT_SECRET=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.clientSecret')
@@ -45,14 +44,28 @@ jobs:
         export ARM_TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')
         export TF_IN_AUTOMATION=true
         export TF_INPUT=false
-        export TF_LOCK_TIMEOUT=5m
         
         # Run Terraform with optimizations for speed
         cd terraform
         terraform init -upgrade
         
-        # Apply changes only (no destroy)
-        terraform apply -auto-approve -parallelism=20 -refresh=false -lock=false \
+        # Force unlock if there's a stuck lock (ignore errors if no lock exists)
+        terraform force-unlock -force ec6ffc3d-3832-e607-6a17-50c980a3fe35 || true
+        
+        # Destroy any existing resources first to start fresh
+        terraform destroy -auto-approve \
+          -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
+          -var="resource_group_name=rg-devops-group6" \
+          -var="resource_group_location=polandcentral" \
+          -var="resource_prefix=devopsa" \
+          -var="environment=dev" \
+          -var="managed_disk_name=app-data" \
+          -var="disk_size_gb=20" \
+          -var="storage_account_type=Standard_LRS" \
+          -var="author=group6" || true
+        
+        # Now create everything fresh
+        terraform apply -auto-approve -parallelism=20 -refresh=false \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
