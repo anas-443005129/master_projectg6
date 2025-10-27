@@ -57,32 +57,53 @@ jobs:
 
         # Use account key for reliable data-plane control (avoids RBAC gaps)
         SA_KEY=$(az storage account keys list -g "$TFSTATE_RG" -n "$TFSTATE_SA" --query "[0].value" -o tsv)
-        if [ -n "$SA_KEY" ]; then
-          LEASE_STATE=$(az storage blob show \
-            --account-name "$TFSTATE_SA" \
-            --container-name "$TFSTATE_CONTAINER" \
-            --name "$TFSTATE_BLOB" \
-            --account-key "$SA_KEY" \
-            --query 'properties.lease.state' -o tsv 2>/dev/null || echo "")
-          if [ "$LEASE_STATE" = "leased" ]; then
-            echo "Breaking stale lease on tfstate blob using account key..."
+        break_lease_and_wait() {
+          # Requires SA_KEY and TFSTATE_* env vars
+          if [ -z "$SA_KEY" ]; then
+            echo "Warning: storage account key unavailable; cannot break lease explicitly"
+            return 0
+          fi
+          for i in 1 2 3 4 5 6; do
+            CUR=$(az storage blob show \
+              --account-name "$TFSTATE_SA" \
+              --container-name "$TFSTATE_CONTAINER" \
+              --name "$TFSTATE_BLOB" \
+              --account-key "$SA_KEY" \
+              --query 'properties.lease.state' -o tsv 2>/dev/null || echo "")
+            echo "Lease state: ${CUR:-unknown}"
+            if [ "$CUR" != "leased" ]; then
+              break
+            fi
+            echo "Breaking active lease on tfstate blob... (attempt $i)"
             az storage blob lease break \
               --account-name "$TFSTATE_SA" \
               --container-name "$TFSTATE_CONTAINER" \
               --name "$TFSTATE_BLOB" \
               --account-key "$SA_KEY" \
               --break-period 0 || true
-            # Give Azure a moment to release the lease fully
-            sleep 8
-          fi
-        else
-          echo "Warning: could not retrieve storage account key; proceeding without explicit lease break"
-        fi
+            sleep 10
+          done
+          # Final check
+          FINAL=$(az storage blob show \
+            --account-name "$TFSTATE_SA" \
+            --container-name "$TFSTATE_CONTAINER" \
+            --name "$TFSTATE_BLOB" \
+            --account-key "$SA_KEY" \
+            --query 'properties.lease.state' -o tsv 2>/dev/null || echo "")
+          echo "Final lease state: ${FINAL:-unknown}"
+        }
+
+        # Try to clear any existing lease before Terraform
+        break_lease_and_wait
 
         # Run Terraform normally (no destroy, no -lock=false). Simpler and safer.
         cd terraform
         terraform init -upgrade
-        terraform apply -auto-approve -lock-timeout=3m \
+        # Re-check lease just in case another process raced us
+        break_lease_and_wait
+        export TF_LOG=ERROR
+        export TF_LOG_PATH=./tf.log
+        terraform apply -auto-approve -lock-timeout=5m \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
