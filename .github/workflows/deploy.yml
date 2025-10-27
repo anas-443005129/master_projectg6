@@ -52,7 +52,7 @@ jobs:
         terraform init -upgrade
         
         # Apply changes only (no destroy)
-        terraform apply -auto-approve -parallelism=20 -refresh=false -lock-timeout=$TF_LOCK_TIMEOUT \
+        terraform apply -auto-approve -parallelism=20 -refresh=false -lock=false \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
           -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
