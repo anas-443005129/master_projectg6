@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: devops-advisor
-          image: devopsaacr.azurecr.io/devops-advisor:latest
+          image: group6acr.azurecr.io/devops-advisor:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5001
