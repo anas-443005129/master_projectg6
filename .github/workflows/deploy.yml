@@ -79,8 +79,7 @@ jobs:
               --account-name "$TFSTATE_SA" \
               --container-name "$TFSTATE_CONTAINER" \
               --blob-name "$TFSTATE_BLOB" \
-              --account-key "$SA_KEY" \
-              --break-period 0 || true
+              --account-key "$SA_KEY" || true
             sleep 10
           done
           # Final check
