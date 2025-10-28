@@ -17,12 +17,3 @@ provider "azurerm" {
     }
   }
 }
-terraform {
-  backend "azurerm" {
-    resource_group_name   = "Group-6"      
-    storage_account_name  = "group6sa"
-    container_name        = "tfstate"
-    key                   = "terraform.tfstate"
-  }
-}
-

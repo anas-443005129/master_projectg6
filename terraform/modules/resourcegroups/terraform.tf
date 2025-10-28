@@ -12,9 +12,4 @@ resource "azurerm_resource_group" "this" {
 }
 
 
-resource "azurerm_management_lock" "rg_cannot_delete" {
-  name       = "protect-${azurerm_resource_group.this.name}"
-  scope      = azurerm_resource_group.this.id
-  lock_level = "CanNotDelete"
-  notes      = "Managed by Terraform: prevents accidental deletion of the resource group. Remove this lock intentionally before delete."
-}
+

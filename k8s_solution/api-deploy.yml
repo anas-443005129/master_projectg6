@@ -17,7 +17,8 @@ spec:
     spec:
       containers:
         - name: devops-advisor
-          image: devopsaacr.azurecr.io/devops-advisor:latest
+          # Updated to match the registry used by the CI workflow and AKS attachment
+          image: group6acr.azurecr.io/devops-advisor:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5001
@@ -95,10 +96,10 @@ spec:
 # 6) Wait for PostgreSQL to be ready
 ### kubectl wait --namespace devops-advisor --for=condition=ready pod -l app=postgres --timeout=180s
 
-# 7) Build and push app image to ACR (devopsaacr)
-### az acr login --name devopsaacr
-### docker build -t devopsaacr.azurecr.io/devops-advisor:latest .
-### docker push devopsaacr.azurecr.io/devops-advisor:latest
+# 7) Build and push app image to ACR (group6acr)
+### az acr login --name group6acr
+### docker build -t group6acr.azurecr.io/devops-advisor:latest .
+### docker push group6acr.azurecr.io/devops-advisor:latest
 
 # 8) Apply app manifests
 ### kubectl apply -f k8s_solution/api-deploy.yml
