@@ -98,7 +98,8 @@ jobs:
         terraform init -upgrade
         break_lease_and_wait
         DESIRED_RG="rg-devops-group6"
-        CURRENT_RG=$(terraform state show module.resourcegroups.azurerm_resource_group.this 2>/dev/null | awk -F' = ' '/^\s*name\s*=/{print $2}' | head -n1 || true)
+        # Strip any quotes around the name coming from terraform state show output
+        CURRENT_RG=$(terraform state show module.resourcegroups.azurerm_resource_group.this 2>/dev/null | awk -F' = ' '/^\s*name\s*=/{gsub(/"/, "", $2); print $2}' | head -n1 || true)
         echo "Desired RG: $DESIRED_RG | State RG: ${CURRENT_RG:-none}"
         if [ -n "$CURRENT_RG" ] && [ "$CURRENT_RG" != "$DESIRED_RG" ]; then
           echo "State references a different RG ($CURRENT_RG). Removing it from state to avoid deletion..."
@@ -116,6 +117,13 @@ jobs:
           -var="disk_size_gb=20" \
           -var="storage_account_type=Standard_LRS" \
           -var="author=group6"
+
+        # Verify RG exists with the desired name (debug output for clarity)
+        echo "Verifying Resource Group creation..."
+        az group show -n "$DESIRED_RG" -o table || {
+          echo "ERROR: Resource Group $DESIRED_RG not found after apply";
+          exit 1;
+        }
     
     - name: Setup AKS
       run: |
