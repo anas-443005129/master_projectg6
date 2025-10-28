@@ -64,9 +64,9 @@ jobs:
         export TF_LOG_PATH=./tf.log
         terraform apply -auto-approve -lock-timeout=5m \
           -var="ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID" \
-          -var="resource_group_name=rg-devops-group66" \
+          -var="resource_group_name=rg-devops-group6" \
           -var="resource_group_location=polandcentral" \
-          -var="resource_prefix=devopsa66" \
+          -var="resource_prefix=devopsa" \
           -var="environment=dev" \
           -var="managed_disk_name=app-data" \
           -var="disk_size_gb=20" \
@@ -84,7 +84,7 @@ jobs:
       run: |
         az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks
         az aks update -n devopsa-aks -g rg-devops-group6 --attach-acr group6acr
-    
+
     - name: Setup Helm (for ingress and monitoring)
       uses: azure/setup-helm@v4
 
