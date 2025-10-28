@@ -179,16 +179,8 @@ jobs:
     - name: Create/Update Argo CD Applications
       run: |
         set -e
+        # Apply Argo CD Application and proceed without waiting; Argo reconciles in background.
         kubectl apply -f argocd-apps.yaml
-        for i in {1..30}; do
-          PHASE=$(kubectl -n argocd get application devops-advisor-app -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
-          HEALTH=$(kubectl -n argocd get application devops-advisor-app -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
-          echo "Argo App Sync=$PHASE Health=$HEALTH"
-          if [ "$PHASE" = "Synced" ] && [ "$HEALTH" = "Healthy" ]; then
-            break
-          fi
-          sleep 10
-        done
 
     - name: Enable AGIC (Application Gateway Ingress Controller)
       run: |
@@ -208,12 +200,17 @@ jobs:
           echo "AGIC enabled."
         fi
 
-    - name: Restart app after AGIC and wait
+    - name: Restart app after AGIC (best-effort)
       run: |
         set -e
         # Ensure AGIC Ingress is applied (idempotent)
         kubectl apply -f k8s_solution/app-ingress-agic.yml
-        kubectl rollout restart deployment devops-advisor-app -n devops-advisor
+        # Restart only if the deployment exists; skip otherwise to avoid failing early
+        if kubectl -n devops-advisor get deploy devops-advisor-app >/dev/null 2>&1; then
+          kubectl -n devops-advisor rollout restart deployment devops-advisor-app || true
+        else
+          echo "Deployment devops-advisor-app not found yet; skipping restart in this job."
+        fi
 
   expose-and-autoscale:
     name: Expose via AGIC and enable HPA
@@ -233,10 +230,46 @@ jobs:
     - name: Apply AGIC Ingress and HPA, then restart app
       run: |
         set -e
+        # Ensure AGIC controller pods are ready before applying ingress
+        kubectl -n kube-system wait --for=condition=ready pod -l app=ingress-appgw --timeout=10m || true
+
+        # Apply Ingress and HPA (idempotent)
         kubectl apply -f k8s_solution/app-ingress-agic.yml
         kubectl apply -f k8s_solution/api-hpa.yml
+
+        # Wait for the deployment to exist before attempting a restart (up to ~5 minutes)
+        for i in $(seq 1 30); do
+          kubectl -n devops-advisor get deploy devops-advisor-app >/dev/null 2>&1 && break || true
+          echo "Waiting for deployment/devops-advisor-app to be created by Argo... ($i/30)"
+          sleep 10
+        done
+
+        # Restart app and wait for rollout to complete (more generous timeout)
         kubectl -n devops-advisor rollout restart deployment devops-advisor-app
-        kubectl -n devops-advisor rollout status deployment devops-advisor-app --timeout=180s
+        kubectl -n devops-advisor rollout status deployment devops-advisor-app --timeout=5m
+        kubectl -n devops-advisor wait --for=condition=available deployment/devops-advisor-app --timeout=5m
+
+        # Wait for Ingress to receive an external address from AGIC
+        for i in $(seq 1 30); do
+          HOST=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+          IP=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+          if [ -n "$HOST" ] || [ -n "$IP" ]; then
+            echo "Ingress is ready at: ${HOST:-$IP}"
+            break
+          fi
+          echo "Waiting for Ingress address... ($i/30)"
+          sleep 10
+        done
+
+        # Wait for HPA to be able to scale (metrics available)
+        for i in $(seq 1 30); do
+          COND=$(kubectl -n devops-advisor get hpa devops-advisor-hpa -o jsonpath='{range .status.conditions[*]}{.type}:{.status} {end}' 2>/dev/null || true)
+          echo "HPA conditions: ${COND:-none}"
+          echo "$COND" | grep -q "AbleToScale:True" && break || true
+          sleep 10
+        done
+
         echo "Current Ingress and HPA status:"
         kubectl -n devops-advisor get ingress
         kubectl -n devops-advisor get hpa
+        kubectl -n devops-advisor describe hpa devops-advisor-hpa || true
