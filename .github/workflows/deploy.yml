@@ -100,6 +100,14 @@ jobs:
         terraform init -upgrade
         # Re-check lease just in case another process raced us
         break_lease_and_wait
+        # Safety: if state still tracks a different RG name, drop it from state so we don't delete a foreign RG
+        DESIRED_RG="rg-devops-group6"
+        CURRENT_RG=$(terraform state show module.resourcegroups.azurerm_resource_group.this 2>/dev/null | awk -F' = ' '/^\s*name\s*=/{print $2}' | head -n1 || true)
+        echo "Desired RG: $DESIRED_RG | State RG: ${CURRENT_RG:-none}"
+        if [ -n "$CURRENT_RG" ] && [ "$CURRENT_RG" != "$DESIRED_RG" ]; then
+          echo "State references a different RG ($CURRENT_RG). Removing it from state to avoid deletion..."
+          terraform state rm module.resourcegroups.azurerm_resource_group.this || true
+        fi
         export TF_LOG=ERROR
         export TF_LOG_PATH=./tf.log
         terraform apply -auto-approve -lock-timeout=5m \
