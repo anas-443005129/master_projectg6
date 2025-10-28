@@ -10,26 +10,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  terraform-infra:
+    name: Provision Azure infra (Terraform)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
     - uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
-    - name: Build and Push
-      run: |
-        docker build -t group6acr.azurecr.io/devops-advisor:latest .
-        az acr login --name group6acr
-        docker push group6acr.azurecr.io/devops-advisor:latest
-    
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: 1.5.0
-    
     - name: Terraform Apply
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -79,15 +71,36 @@ jobs:
           echo "ERROR: Resource Group $DESIRED_RG not found after apply";
           exit 1;
         }
-    
+  build-and-push:
+    name: Build and push image
+    needs: terraform-infra
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Build and Push
+      run: |
+        docker build -t group6acr.azurecr.io/devops-advisor:latest .
+        az acr login --name group6acr
+        docker push group6acr.azurecr.io/devops-advisor:latest
+
+  platform-config:
+    name: Configure AKS, Argo CD, and Monitoring
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Setup AKS
       run: |
         az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks
         az aks update -n devopsa-aks -g rg-devops-group6 --attach-acr group6acr
-
     - name: Setup Helm (for ingress and monitoring)
       uses: azure/setup-helm@v4
-
     - name: Install Argo CD via Ansible playbook
       run: |
         set -e
@@ -97,7 +110,6 @@ jobs:
         pip3 install --user ansible kubernetes openshift pyyaml
         ~/.local/bin/ansible-galaxy collection install kubernetes.core
         ~/.local/bin/ansible-playbook -i localhost, -c local deploy-argocd.yml
-
     - name: Show Argo CD Access Info
       run: |
         set -e
@@ -111,7 +123,6 @@ jobs:
         else
           echo "Argo CD LoadBalancer IP pending. Check later with: kubectl -n argocd get svc argocd-server"
         fi
-
     - name: Install ingress-nginx via Helm (idempotent)
       run: |
         set -e
@@ -122,7 +133,6 @@ jobs:
           --namespace ingress-nginx \
           --create-namespace \
           --set controller.service.type=LoadBalancer
-
     - name: Prepare Grafana admin secret (namespace + secret)
       env:
         GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
@@ -140,7 +150,6 @@ jobs:
           --from-literal=admin-user=admin \
           --from-literal=admin-password="$PASS" \
           --dry-run=client -o yaml | kubectl apply -f -
-
     - name: Install Monitoring via Ansible playbook
       run: |
         set -e
@@ -151,7 +160,6 @@ jobs:
         ~/.local/bin/ansible-galaxy collection install kubernetes.core
         # Run the playbook against localhost using existing kubeconfig
         ~/.local/bin/ansible-playbook -i localhost, -c local deploy-monitoring.yml
-
     - name: Show Monitoring Access Info
       run: |
         # Print Grafana external IP if available
@@ -162,7 +170,6 @@ jobs:
         else
           echo "Grafana LoadBalancer IP pending. Check later with: kubectl get svc grafana -n monitoring"
         fi
-    
     - name: Prepare App namespace and secrets (Argo CD will deploy manifests)
       run: |
         kubectl create namespace devops-advisor --dry-run=client -o yaml | kubectl apply -f -
@@ -175,13 +182,11 @@ jobs:
           --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
           --from-literal=POSTGRES_DB="devops_advisor_db" \
           -n devops-advisor --dry-run=client -o yaml | kubectl apply -f -
-
     - name: Create/Update Argo CD Applications
       run: |
         set -e
         # Apply Argo CD Application and proceed without waiting; Argo reconciles in background.
         kubectl apply -f argocd-apps.yaml
-
     - name: Enable AGIC (Application Gateway Ingress Controller)
       run: |
         set -e
@@ -200,6 +205,21 @@ jobs:
           echo "AGIC enabled."
         fi
 
+  expose-and-autoscale:
+    name: Expose via AGIC and enable HPA
+    needs: platform-config
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Configure kubectl
+      run: |
+        set -e
+        SUB_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')
+        az account set --subscription "$SUB_ID"
+        az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks --overwrite-existing
     - name: Generate and upload self-signed SSL cert to App Gateway (no DNS)
       run: |
         set -e
@@ -224,11 +244,29 @@ jobs:
         APPGW_NAME=$(echo "$APPGW_ID" | awk -F/ '{for(i=1;i<=NF;i++){if($i=="applicationGateways"){print $(i+1); exit}}}')
         echo "Using AppGw RG=$APPGW_RG NAME=$APPGW_NAME"
 
-        # Resolve public IP of the App Gateway to include in cert SAN
-        PIP_ID=$(az network application-gateway show -g "$APPGW_RG" -n "$APPGW_NAME" --query "frontendPublicIpConfigurations[0].publicIpAddress.id" -o tsv || true)
+        # Resolve public IP of the App Gateway to include in cert SAN (robust)
         APP_IP=""
+        # Try via frontend-ip list (most reliable)
+        PIP_ID=$(az network application-gateway frontend-ip list -g "$APPGW_RG" --gateway-name "$APPGW_NAME" \
+          --query "[?publicIpAddress!=null].publicIpAddress.id | [0]" -o tsv || true)
         if [ -n "$PIP_ID" ]; then
           APP_IP=$(az network public-ip show --ids "$PIP_ID" --query ipAddress -o tsv || true)
+        fi
+        # Fallback to ARM shape on show
+        if [ -z "$APP_IP" ]; then
+          PIP_ID=$(az network application-gateway show -g "$APPGW_RG" -n "$APPGW_NAME" \
+            --query "frontendIPConfigurations[?publicIPAddress.id != null].publicIPAddress.id | [0]" -o tsv || true)
+          if [ -n "$PIP_ID" ]; then
+            APP_IP=$(az network public-ip show --ids "$PIP_ID" --query ipAddress -o tsv || true)
+          fi
+        fi
+        # Final fallback: use current Ingress external IP if already provisioned
+        if [ -z "$APP_IP" ]; then
+          for i in $(seq 1 30); do
+            APP_IP=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+            [ -n "$APP_IP" ] && break || true
+            echo "Waiting for Ingress external IP... ($i/30)"; sleep 10
+          done
         fi
         if [ -z "$APP_IP" ]; then
           echo "ERROR: Could not determine App Gateway public IP."; exit 1
@@ -259,34 +297,6 @@ jobs:
 
         # Cleanup local files
         rm -f key.pem cert.pem cert.pfx
-
-    - name: Restart app after AGIC (best-effort)
-      run: |
-        set -e
-        # Ensure AGIC Ingress is applied (idempotent)
-        kubectl apply -f k8s_solution/app-ingress-agic.yml
-        # Restart only if the deployment exists; skip otherwise to avoid failing early
-        if kubectl -n devops-advisor get deploy devops-advisor-app >/dev/null 2>&1; then
-          kubectl -n devops-advisor rollout restart deployment devops-advisor-app || true
-        else
-          echo "Deployment devops-advisor-app not found yet; skipping restart in this job."
-        fi
-
-  expose-and-autoscale:
-    name: Expose via AGIC and enable HPA
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Configure kubectl
-      run: |
-        set -e
-        SUB_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')
-        az account set --subscription "$SUB_ID"
-        az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks --overwrite-existing
     - name: Apply AGIC Ingress and HPA, then restart app
       run: |
         set -e
