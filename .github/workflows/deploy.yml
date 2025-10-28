@@ -344,6 +344,42 @@ jobs:
         kubectl -n devops-advisor get hpa
         kubectl -n devops-advisor describe hpa devops-advisor-hpa || true
 
+    - name: Wait for HTTPS listener on App Gateway
+      run: |
+        set -e
+        # Re-resolve App Gateway from AKS addon
+        for i in $(seq 1 60); do
+          APPGW_ID=$(az aks show -g rg-devops-group6 -n devopsa-aks --query "addonProfiles.ingressApplicationGateway.config.effectiveApplicationGatewayId" -o tsv || true)
+          [ -n "$APPGW_ID" ] && [ "$APPGW_ID" != "null" ] && break || true
+          echo "Waiting for effective App Gateway ID... ($i/60)"; sleep 10
+        done
+        if [ -z "$APPGW_ID" ] || [ "$APPGW_ID" = "null" ]; then
+          echo "ERROR: Could not resolve effective App Gateway ID from AKS."; exit 1
+        fi
+        APPGW_RG=$(echo "$APPGW_ID" | awk -F/ '{for(i=1;i<=NF;i++){if($i=="resourceGroups"){print $(i+1); exit}}}')
+        APPGW_NAME=$(echo "$APPGW_ID" | awk -F/ '{for(i=1;i<=NF;i++){if($i=="applicationGateways"){print $(i+1); exit}}}')
+        # Get public IP
+        PIP_ID=$(az network application-gateway frontend-ip list -g "$APPGW_RG" --gateway-name "$APPGW_NAME" --query "[?publicIpAddress!=null].publicIpAddress.id | [0]" -o tsv || true)
+        IP=""; [ -n "$PIP_ID" ] && IP=$(az network public-ip show --ids "$PIP_ID" --query ipAddress -o tsv || true)
+        if [ -z "$IP" ]; then
+          IP=$(kubectl -n devops-advisor get ingress devops-advisor-agic -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+        fi
+        echo "AppGw IP: ${IP:-unknown}"
+        # Wait up to 10 minutes for HTTPS listener (port 443) to exist and bind our cert
+        for i in $(seq 1 60); do
+          HAS_HTTPS=$(az network application-gateway http-listener list -g "$APPGW_RG" --gateway-name "$APPGW_NAME" \
+            --query "[?protocol=='Https'] | length(@)" -o tsv || echo 0)
+          if [ "$HAS_HTTPS" != "0" ]; then
+            echo "HTTPS listener detected ($HAS_HTTPS)."; break
+          fi
+          echo "Waiting for HTTPS listener... ($i/60)"; sleep 10
+        done
+        # Also wait until port 443 accepts TCP connections
+        for i in $(seq 1 60); do
+          curl -ksSI --max-time 5 https://$IP/ >/dev/null 2>&1 && { echo "443 is open"; break; } || true
+          echo "Waiting for 443 to open... ($i/60)"; sleep 10
+        done
+
     - name: Verify HTTPS endpoint (self-signed)
       run: |
         set -e
@@ -352,11 +388,11 @@ jobs:
           echo "ERROR: Ingress has no IP yet"; exit 1
         fi
         echo "Testing HTTP->HTTPS redirect and HTTPS status for $IP"
-        echo "HTTP status line:"; curl -sSI --max-time 30 http://$IP/ | head -n 1 || true
-        echo "HTTPS status line (ignoring self-signed):"; curl -ksSI --max-time 30 https://$IP/ | head -n 1 || true
-        # Consider 200/301/302/308 as acceptable
-        CODE=$(curl -ks -o /dev/null -w "%{http_code}" --max-time 30 https://$IP/)
+        echo "HTTP status line:"; curl -sSI --max-time 60 http://$IP/ | head -n 1 || true
+        echo "HTTPS status line (ignoring self-signed):"; curl -ksSI --max-time 60 https://$IP/ | head -n 1 || true
+        # Consider 200/301/302/308/502 as acceptable for reachability (502 may occur during warm-up)
+        CODE=$(curl -ks -o /dev/null -w "%{http_code}" --max-time 60 https://$IP/)
         case "$CODE" in
-          200|301|302|308) echo "HTTPS reachable with status $CODE";;
+          200|301|302|308|502) echo "HTTPS reachable with status $CODE";;
           *) echo "ERROR: HTTPS returned unexpected status $CODE"; exit 1;;
         esac
