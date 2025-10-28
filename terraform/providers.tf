@@ -12,7 +12,8 @@ provider "azurerm" {
   subscription_id = var.ARM_SUBSCRIPTION_ID
   features {
     resource_group {
-      prevent_deletion_if_contains_resources = false
+      # Extra safety: don't allow deleting RGs that still have resources
+      prevent_deletion_if_contains_resources = true
     }
   }
 }

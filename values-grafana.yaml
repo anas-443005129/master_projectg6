@@ -10,7 +10,7 @@ service:
 persistence:
   enabled: true
   size: 10Gi
-  # storageClassName: managed-csi   # ← remove/comment this
+  storageClassName: managed-csi
 
 deploymentStrategy:
   type: Recreate

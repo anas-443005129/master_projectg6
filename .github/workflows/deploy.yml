@@ -92,15 +92,11 @@ jobs:
           echo "Final lease state: ${FINAL:-unknown}"
         }
 
-        # Try to clear any existing lease before Terraform
         break_lease_and_wait
 
-        # Run Terraform normally (no destroy, no -lock=false). Simpler and safer.
         cd terraform
         terraform init -upgrade
-        # Re-check lease just in case another process raced us
         break_lease_and_wait
-        # Safety: if state still tracks a different RG name, drop it from state so we don't delete a foreign RG
         DESIRED_RG="rg-devops-group6"
         CURRENT_RG=$(terraform state show module.resourcegroups.azurerm_resource_group.this 2>/dev/null | awk -F' = ' '/^\s*name\s*=/{print $2}' | head -n1 || true)
         echo "Desired RG: $DESIRED_RG | State RG: ${CURRENT_RG:-none}"

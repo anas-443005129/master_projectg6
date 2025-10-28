@@ -5,4 +5,8 @@ resource "azurerm_resource_group" "this" {
   tags = {
     provisioner = "${lower(replace(var.author, " ", "-"))}-terraform"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
