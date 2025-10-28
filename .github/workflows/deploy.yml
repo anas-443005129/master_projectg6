@@ -200,6 +200,32 @@ jobs:
           echo "AGIC enabled."
         fi
 
+    - name: Generate and upload self-signed SSL cert to App Gateway (no DNS)
+      run: |
+        set -e
+        # Create a self-signed cert valid for 365 days (CN is arbitrary since browser will warn anyway)
+        sudo apt-get update -y
+        sudo apt-get install -y openssl
+        openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
+          -keyout key.pem -out cert.pem -subj "/CN=selfsigned.local"
+        # Package into PFX with a static password (not secret-critical; used only for AppGw import)
+        PASS="changeit"
+        openssl pkcs12 -export -out cert.pfx -inkey key.pem -in cert.pem -passout pass:"$PASS"
+
+        # Upload or update certificate on the Application Gateway under a fixed name
+        if az network application-gateway ssl-cert show -g rg-devops-group6 --gateway-name myAppGwG6 -n devops-advisor-selfsigned >/dev/null 2>&1; then
+          az network application-gateway ssl-cert update \
+            -g rg-devops-group6 --gateway-name myAppGwG6 \
+            -n devops-advisor-selfsigned --certificate-file cert.pfx --password "$PASS"
+        else
+          az network application-gateway ssl-cert add \
+            -g rg-devops-group6 --gateway-name myAppGwG6 \
+            -n devops-advisor-selfsigned --certificate-file cert.pfx --password "$PASS"
+        fi
+
+        # Cleanup local files
+        rm -f key.pem cert.pem cert.pfx
+
     - name: Restart app after AGIC (best-effort)
       run: |
         set -e

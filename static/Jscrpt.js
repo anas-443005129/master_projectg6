@@ -258,13 +258,15 @@ $(document).ready(function() {
     })();
 
     function setBusy(isBusy) {
-        const $buttons = $('#generate-cost-btn, #generate-performance-btn, #generate-structure-btn, #generate-terraform-btn, #generate-cli-btn');
-        $buttons.prop('disabled', !!isBusy);
+        // Allow parallel actions: no global disable.
+        // Keeping as a no-op to avoid changing all callers.
     }
 
     $('#generate-cost-btn').on('click', function(event) {
         event.preventDefault();
-        setBusy(true);
+        const $btn = $(this);
+        if ($btn.prop('disabled')) return; // prevent double-click spam on same button
+        $btn.prop('disabled', true);
         const toastId = showToast('loading', 'Generating Cost Best Practices', 'Please wait while AI analyzes your cost optimization requirements...', 0);
         
         const data = {
@@ -289,12 +291,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showCost('No response from server.');
                 }
-                setBusy(false);
+                $btn.prop('disabled', false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showCost('Request failed: ' + xhr.responseText);
-                setBusy(false);
+                $btn.prop('disabled', false);
             }
         });
     });
@@ -319,7 +321,9 @@ $(document).ready(function() {
 
     $('#generate-performance-btn').on('click', function(event) {
         event.preventDefault();
-        setBusy(true);
+        const $btn = $(this);
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
         const toastId = showToast('loading', 'Generating Performance Best Practices', 'Please wait while AI analyzes your performance optimization requirements...', 0);
         
         const data = {
@@ -344,12 +348,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showPerformance('No response from server.');
                 }
-                setBusy(false);
+                $btn.prop('disabled', false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showPerformance('Request failed: ' + xhr.responseText);
-                setBusy(false);
+                $btn.prop('disabled', false);
             }
         });
     });
@@ -378,7 +382,9 @@ $(document).ready(function() {
 
     $('#generate-structure-btn').on('click', function(event) {
         event.preventDefault();
-        setBusy(true);
+        const $btn = $(this);
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
         const toastId = showToast('loading', 'Generating Project Structure', 'Creating folder structure based on your project...', 0);
         
         const data = {
@@ -404,12 +410,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showStructure('No response from server.');
                 }
-                setBusy(false);
+                $btn.prop('disabled', false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showStructure('Request failed: ' + xhr.responseText);
-                setBusy(false);
+                $btn.prop('disabled', false);
             }
         });
     });
@@ -434,7 +440,9 @@ $(document).ready(function() {
 
     $('#generate-terraform-btn').on('click', function(event) {
         event.preventDefault();
-        setBusy(true);
+        const $btn = $(this);
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
         const structure = $('#structure-text').text() || localStorage.getItem('devops_structure') || '';
         
         if (!structure || structure.trim().length === 0) {
@@ -442,7 +450,7 @@ $(document).ready(function() {
             return;
         }
 
-        const toastId = showToast('loading', 'Generating Terraform Code', 'Creating infrastructure as code modules...', 0);
+    const toastId = showToast('loading', 'Generating Terraform Code', 'Creating infrastructure as code modules...', 0);
 
         const data = {
             provider: $('#provider').val(),
@@ -466,19 +474,21 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showTerraform('No response from server.');
                 }
-                setBusy(false);
+                $btn.prop('disabled', false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showTerraform('Request failed: ' + xhr.responseText);
-                setBusy(false);
+                $btn.prop('disabled', false);
             }
         });
     });
 
     $('#generate-cli-btn').on('click', function(event) {
         event.preventDefault();
-        setBusy(true);
+        const $btn = $(this);
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
         const structure = $('#structure-text').text() || localStorage.getItem('devops_structure') || '';
 
         if (!structure || structure.trim().length === 0) {
@@ -510,12 +520,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showCli('No response from server.');
                 }
-                setBusy(false);
+                $btn.prop('disabled', false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showCli('Request failed: ' + xhr.responseText);
-                setBusy(false);
+                $btn.prop('disabled', false);
             }
         });
     });
