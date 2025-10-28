@@ -71,19 +71,33 @@ $(document).ready(function() {
         }
     }
    
+    const MAX_DESC_HEIGHT = 420; // keep in sync with CSS max-height
+    function adjustDescriptionHeight(el) {
+        const ta = el || document.getElementById('description');
+        if (!ta) return;
+        ta.style.height = 'auto';
+        const desired = Math.min(ta.scrollHeight, MAX_DESC_HEIGHT);
+        ta.style.height = desired + 'px';
+        if (ta.scrollHeight > MAX_DESC_HEIGHT) {
+            ta.style.overflowY = 'auto';
+        } else {
+            ta.style.overflowY = 'hidden';
+        }
+    }
     const textarea = document.getElementById('description');
     if (textarea) {
         textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = this.scrollHeight + 'px';
+            adjustDescriptionHeight(this);
         });
-        
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-    } 
+        // Initial adjust on load
+        adjustDescriptionHeight(textarea);
+    }
     function setActive($group, $btn) {
-        $group.find('.btn').removeClass('active');
+        const $buttons = $group.find('.btn');
+        $buttons.removeClass('active');
+        $buttons.attr('aria-pressed', 'false');
         $btn.addClass('active');
+        $btn.attr('aria-pressed', 'true');
     }
     const firstProviderBtn = $('#provider-group .provider-btn').first();
     if (firstProviderBtn.length) {
@@ -115,9 +129,142 @@ $(document).ready(function() {
         $('#loading_pressure').val($(this).data('value'));
     });
 
-    // Cost Best Practices button
+    // Persist and restore form inputs for better UX
+    try {
+        const savedProvider = localStorage.getItem('form_provider');
+        const savedScale = localStorage.getItem('form_scale');
+        const savedLoading = localStorage.getItem('form_loading');
+        const savedCountry = localStorage.getItem('form_country');
+        const savedDesc = localStorage.getItem('form_description');
+        if (savedCountry) $('#country').val(savedCountry);
+        if (savedDesc) {
+            $('#description').val(savedDesc);
+            // Recalculate height after restoring saved text
+            adjustDescriptionHeight(document.getElementById('description'));
+        }
+        if (savedProvider) {
+            $('#provider').val(savedProvider);
+            const btn = $(`#provider-group .provider-btn[data-value='${savedProvider}']`);
+            if (btn.length) setActive($('#provider-group'), btn);
+        }
+        if (savedScale) {
+            $('#scale').val(savedScale);
+            const btn = $(`#scale-group .scale-btn[data-value="${savedScale}"]`);
+            if (btn.length) setActive($('#scale-group'), btn);
+        }
+        if (savedLoading) {
+            $('#loading_pressure').val(savedLoading);
+            const btn = $(`#loading-group .loading-btn[data-value='${savedLoading}']`);
+            if (btn.length) setActive($('#loading-group'), btn);
+        }
+    } catch (e) {}
+
+    $('#country').on('input', function(){ localStorage.setItem('form_country', $(this).val()); });
+    $('#description').on('input', function(){
+        localStorage.setItem('form_description', $(this).val());
+        adjustDescriptionHeight(this);
+    });
+
+    // Character counter for description
+    (function(){
+        const $desc = $('#description');
+        const $count = $('#desc-count');
+        if ($desc.length && $count.length) {
+            const max = Number($desc.attr('maxlength')) || 0;
+            const update = () => {
+                const val = $desc.val() || '';
+                $count.text(`${val.length} / ${max || val.length}`);
+            };
+            $desc.on('input', update);
+            update();
+        }
+    })();
+
+    // Country searchable combobox (lightweight, no libs)
+    (function(){
+        const COUNTRIES = [
+            'Saudi Arabia','United Arab Emirates','Egypt','United States','Germany','United Kingdom','France','India','Japan','Singapore','Canada','Australia','Brazil','Mexico','Spain','Italy','Netherlands','Sweden','Norway','Denmark','Finland','Poland','Czech Republic','Austria','Switzerland','Belgium','Portugal','Ireland','Greece','Turkey','South Africa','Nigeria','Kenya','Morocco','Algeria','Tunisia','Qatar','Kuwait','Bahrain','Oman','Jordan','Lebanon','Israel','Pakistan','Bangladesh','Sri Lanka','Nepal','Philippines','Indonesia','Malaysia','Thailand','Vietnam','South Korea','China','Taiwan','Hong Kong','New Zealand','Russia','Ukraine','Argentina','Chile','Colombia','Peru','Romania','Hungary','Bulgaria','Slovakia','Slovenia','Estonia','Lithuania','Latvia','Iceland','Luxembourg','Singapore'
+        ];
+
+        const $combo = $('#country-combo');
+        const $input = $('#country');
+        const $list = $('#country-list');
+
+        function renderList(filter) {
+            const q = (filter || '').toLowerCase();
+            const items = COUNTRIES.filter(c => !q || c.toLowerCase().includes(q)).slice(0, 200);
+            const html = items.map((c,i)=>`<li class="combo-item" role="option" tabindex="-1" data-value="${c}">${c}</li>`).join('');
+            $list.html(html);
+            // select first by default for keyboard nav
+            $list.find('.combo-item').first().attr('aria-selected','true');
+        }
+        function openList(showAll=false){
+            if (showAll) { $input.trigger('input'); }
+            renderList($input.val());
+            $combo.addClass('open');
+            $input.attr('aria-expanded','true');
+        }
+        function closeList(){
+            $combo.removeClass('open');
+            $input.attr('aria-expanded','false');
+        }
+        // Init
+        renderList('');
+
+        // Open on focus or toggle click
+        $input.on('focus', function(){ openList(true); });
+        $combo.find('.combo-toggle').on('click', function(){
+            if ($combo.hasClass('open')) closeList(); else openList(true);
+        });
+        $input.on('input', function(){ renderList($input.val()); openList(); localStorage.setItem('form_country', $(this).val()); });
+        $list.on('click','.combo-item', function(){
+            const val = $(this).data('value');
+            $input.val(val);
+            localStorage.setItem('form_country', val);
+            closeList();
+        });
+        $input.on('keydown', function(e){
+            const $items = $list.find('.combo-item');
+            let $current = $items.filter('[aria-selected="true"]').first();
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                openList();
+                const $next = ($current.length ? $current.next() : $items.first());
+                $items.attr('aria-selected','false');
+                $next.attr('aria-selected','true');
+                $next[0]?.scrollIntoView({block:'nearest'});
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                openList();
+                const $prev = ($current.length ? $current.prev() : $items.last());
+                $items.attr('aria-selected','false');
+                $prev.attr('aria-selected','true');
+                $prev[0]?.scrollIntoView({block:'nearest'});
+            } else if (e.key === 'Enter') {
+                if ($combo.hasClass('open')) {
+                    e.preventDefault();
+                    const val = ($current.text() || $input.val());
+                    $input.val(val);
+                    localStorage.setItem('form_country', val);
+                    closeList();
+                }
+            } else if (e.key === 'Escape') {
+                closeList();
+            }
+        });
+        $(document).on('click', function(e){
+            if (!$.contains($combo[0], e.target)) closeList();
+        });
+    })();
+
+    function setBusy(isBusy) {
+        const $buttons = $('#generate-cost-btn, #generate-performance-btn, #generate-structure-btn, #generate-terraform-btn, #generate-cli-btn');
+        $buttons.prop('disabled', !!isBusy);
+    }
+
     $('#generate-cost-btn').on('click', function(event) {
         event.preventDefault();
+        setBusy(true);
         const toastId = showToast('loading', 'Generating Cost Best Practices', 'Please wait while AI analyzes your cost optimization requirements...', 0);
         
         const data = {
@@ -142,10 +289,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showCost('No response from server.');
                 }
+                setBusy(false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showCost('Request failed: ' + xhr.responseText);
+                setBusy(false);
             }
         });
     });
@@ -168,9 +317,9 @@ $(document).ready(function() {
         if (navigator.clipboard) navigator.clipboard.writeText(txt);
     });
 
-    // Performance Best Practices button
     $('#generate-performance-btn').on('click', function(event) {
         event.preventDefault();
+        setBusy(true);
         const toastId = showToast('loading', 'Generating Performance Best Practices', 'Please wait while AI analyzes your performance optimization requirements...', 0);
         
         const data = {
@@ -195,10 +344,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showPerformance('No response from server.');
                 }
+                setBusy(false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showPerformance('Request failed: ' + xhr.responseText);
+                setBusy(false);
             }
         });
     });
@@ -227,6 +378,7 @@ $(document).ready(function() {
 
     $('#generate-structure-btn').on('click', function(event) {
         event.preventDefault();
+        setBusy(true);
         const toastId = showToast('loading', 'Generating Project Structure', 'Creating folder structure based on your project...', 0);
         
         const data = {
@@ -252,10 +404,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showStructure('No response from server.');
                 }
+                setBusy(false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showStructure('Request failed: ' + xhr.responseText);
+                setBusy(false);
             }
         });
     });
@@ -280,6 +434,7 @@ $(document).ready(function() {
 
     $('#generate-terraform-btn').on('click', function(event) {
         event.preventDefault();
+        setBusy(true);
         const structure = $('#structure-text').text() || localStorage.getItem('devops_structure') || '';
         
         if (!structure || structure.trim().length === 0) {
@@ -311,17 +466,19 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showTerraform('No response from server.');
                 }
+                setBusy(false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showTerraform('Request failed: ' + xhr.responseText);
+                setBusy(false);
             }
         });
     });
 
-    // Build Infra CLI (Linux)
     $('#generate-cli-btn').on('click', function(event) {
         event.preventDefault();
+        setBusy(true);
         const structure = $('#structure-text').text() || localStorage.getItem('devops_structure') || '';
 
         if (!structure || structure.trim().length === 0) {
@@ -353,10 +510,12 @@ $(document).ready(function() {
                     updateToast(toastId, 'error', 'No Response', 'Server returned empty response.');
                     showCli('No response from server.');
                 }
+                setBusy(false);
             },
             error: function(xhr) {
                 updateToast(toastId, 'error', 'Request Failed', xhr.responseText || 'Network error occurred.');
                 showCli('Request failed: ' + xhr.responseText);
+                setBusy(false);
             }
         });
     });
@@ -436,7 +595,6 @@ $(document).ready(function() {
                 $('#performance-card').css('order', '2');
             }
         } else if (visibleCount >= 4) {
-            // With 4+, rely on flex-wrap; set explicit order
             $('#structure-card').css('order', '1');
             $('#cost-card').css('order', '2');
             $('#performance-card').css('order', '3');
@@ -455,29 +613,24 @@ $(document).ready(function() {
         if (navigator.clipboard) navigator.clipboard.writeText(txt);
     });
 
-    // Clear all results button
     $('#clear-all-btn').on('click', function() {
         if (confirm('Are you sure you want to clear all results? This will remove all saved outputs.')) {
-            // Clear localStorage
             localStorage.removeItem('devops_cost');
             localStorage.removeItem('devops_performance');
             localStorage.removeItem('devops_structure');
             localStorage.removeItem('devops_terraform');
             localStorage.removeItem('devops_cli');
             
-            // Hide all cards
             $('#cost-card').addClass('hidden');
             $('#performance-card').addClass('hidden');
             $('#structure-card').addClass('hidden');
             $('#terraform-card').addClass('hidden');
             $('#cli-card').addClass('hidden');
             
-            // Hide buttons
             $('#generate-terraform-btn').hide();
             $('#generate-cli-btn').hide();
             $('#clear-all-btn').hide();
             
-            // Update layout
             updateGridLayout();
         }
     });

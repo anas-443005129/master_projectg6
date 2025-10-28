@@ -19,17 +19,25 @@
     </div>
     <div class="container">
         <form id="generate-form">
-                <label>Choose Cloud Provider</label>
-                <div class="btn-group" id="provider-group">
-                    {% for p in providers %}
-                        <button type="button" class="btn provider-btn" data-value="{{ p }}">{{ p }}</button>
-                    {% endfor %}
+                <div class="option-group" role="group" aria-label="Choose Cloud Provider">
+                    <div class="group-label">
+                        <label>Choose Cloud Provider</label>
+                        <span class="group-hint">Pick where you plan to run</span>
+                    </div>
+                    <div class="btn-group segmented" id="provider-group">
+                        {% for p in providers %}
+                            <button type="button" class="btn provider-btn" data-value="{{ p }}">{{ p }}</button>
+                        {% endfor %}
+                    </div>
                 </div>
                 <input type="hidden" id="provider" name="provider" value="{{ providers[0] }}">
                 <br>
-                <div class="scale-row">
-                    <label>Scale tier</label>
-                    <div class="btn-group" id="scale-group">
+                <div class="option-group" role="group" aria-label="Scale tier">
+                    <div class="group-label">
+                        <label>Scale tier</label>
+                        <span class="group-hint">Daily request volume</span>
+                    </div>
+                    <div class="btn-group segmented" id="scale-group">
                         {% for s in scales %}
                             {% set label = s.split('(')[0].strip() %}
                             {% set range = s.split('(')[1].split(')')[0] %}
@@ -42,9 +50,12 @@
                     <input type="hidden" id="scale" name="scale" value="{{ scales[0] }}">
                 </div>
                 <br>
-                <div class="scale-row">
-                    <label>Loading pressure</label>
-                    <div class="btn-group" id="loading-group">
+                <div class="option-group" role="group" aria-label="Loading pressure">
+                    <div class="group-label">
+                        <label>Loading pressure</label>
+                        <span class="group-hint">Traffic pattern</span>
+                    </div>
+                    <div class="btn-group segmented" id="loading-group">
                         {% for lp in loading_pressure %}
                             <button type="button" class="btn loading-btn" data-value="{{ lp }}">{{ lp }}</button>
                         {% endfor %}
@@ -53,10 +64,20 @@
                 </div>
                 <br>
                 <label for="country">Your Country / Region </label>
-                <input type="text" id="country" name="country" placeholder="e.g., Saudi Arabia, UAE, Egypt, USA, Germany..." />
+                <div class="combo" id="country-combo">
+                    <input type="text" id="country" name="country" aria-label="Your country or region"
+                           autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                           aria-controls="country-list" placeholder="Start typing or click  to choose..." />
+                    <button type="button" class="combo-toggle" aria-label="Show all countries" tabindex="-1">▼</button>
+                    <ul id="country-list" class="combo-list" role="listbox" aria-label="Countries"></ul>
+                </div>
                 <br>
                 <label for="description">Project description</label>
-                <textarea id="description" name="description" rows="4" placeholder=" Write as much as possible about the project you want. Include: what the app does, tech stack (frontend/backend frameworks), database type, if you need containers, static files, caching, authentication, third-party integrations, compliance needs, expected traffic, etc. The more detail you provide, the better the infrastructure recommendations!"></textarea>
+                <textarea id="description" name="description" rows="4" maxlength="1200" aria-describedby="desc-help desc-count" placeholder="Write as much as possible about the project you want. Include: what the app does, tech stack, database, containers, caching, auth, integrations, compliance, expected traffic, etc."></textarea>
+                <div class="field-meta">
+                    <span id="desc-help" class="help-text">Tip: more detail = better recommendations</span>
+                    <span id="desc-count" class="counter" aria-live="polite">0 / 1200</span>
+                </div>
                 <br>
                 <div class="button-row">
                     <button type="button" id="generate-cost-btn" class="primary"> Cost Best Practices</button>

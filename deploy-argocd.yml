@@ -1,0 +1,47 @@
+---
+- name: Deploy Argo CD on AKS
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    kube_namespace: argocd
+    argocd_release_name: argocd
+    argocd_chart: argo/argo-cd
+    argocd_values_file: values-argocd.yaml
+
+  tasks:
+    - name: Ensure Argo CD namespace exists
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ kube_namespace }}"
+
+    - name: Add Helm repo for Argo
+      kubernetes.core.helm_repository:
+        name: argo
+        repo_url: https://argoproj.github.io/argo-helm
+        force_update: true
+
+    - name: Deploy / Upgrade Argo CD
+      kubernetes.core.helm:
+        name: "{{ argocd_release_name }}"
+        chart_ref: "{{ argocd_chart }}"
+        release_namespace: "{{ kube_namespace }}"
+        create_namespace: false
+        values_files:
+          - "{{ argocd_values_file }}"
+        wait: true
+        timeout: "10m"          # <-- FIX: add time unit
+        atomic: true            # rollback on failure
+
+    - name: Show Argo CD services
+      command: kubectl get svc -n {{ kube_namespace }}
+      register: svc_output
+
+    - debug:
+        var: svc_output.stdout_lines
+

@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devops-advisor-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/anas-443005129/master_projectg6
+    targetRevision: main
+    path: k8s_solution
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devops-advisor
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    retry:
+      limit: 3
+

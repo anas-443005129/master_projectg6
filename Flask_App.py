@@ -20,13 +20,11 @@ print(">>> CWD:", os.getcwd())
 print(">>> FILE:", __file__)
 
 app = Flask(__name__)
-# Secret key for session/auth (read from env or fallback)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
 file_path = ""
 
 
 def load_env_files():
-    """Load key=value lines from .env (preferred) or .env.example (fallback)."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     for name in [".env", ".env.example"]:
         path = os.path.join(base_dir, name)
@@ -49,10 +47,6 @@ def load_env_files():
 
 load_env_files()
 
-# ---------------------------
-# Database setup (PostgreSQL)
-# ---------------------------
-
 class Base(DeclarativeBase):
     pass
 
@@ -71,7 +65,7 @@ class History(Base):
     __tablename__ = "histories"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    item_type: Mapped[str] = mapped_column(String(32))  # solutions|structure|terraform|cli
+    item_type: Mapped[str] = mapped_column(String(32))
     provider: Mapped[str] = mapped_column(String(64), default="")
     scale: Mapped[str] = mapped_column(String(64), default="")
     loading: Mapped[str] = mapped_column(String(64), default="")
@@ -99,7 +93,6 @@ def _build_db_url_from_env() -> str:
 DB_URL = os.environ.get("DATABASE_URL", _build_db_url_from_env())
 engine = create_engine(DB_URL, pool_pre_ping=True)
 
-# Database initialization function
 def init_database():
     """Initialize database tables and test connection with retry logic"""
     import time
@@ -110,18 +103,12 @@ def init_database():
         try:
             print(f">>> Database connection attempt {attempt}/{max_retries}")
             print(f">>> Database URL: {DB_URL}")
-            
-            # Test connection first
             with engine.connect() as conn:
                 result = conn.execute(text("SELECT 1"))
                 print(">>> Database connection test successful!")
-            
-            # Create all tables
             print(">>> Creating database tables...")
             Base.metadata.create_all(engine)
             print(">>> Database tables created successfully!")
-            
-            # Verify tables exist
             with engine.connect() as conn:
                 result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
                 tables = [row[0] for row in result]
@@ -209,13 +196,11 @@ def index():
 @app.route("/history_page", methods=["GET"])
 @login_required
 def history_page():
-    """Render the dedicated history page"""
     return render_template("history.html")
 
 
 @app.route("/init-db")
 def init_db_endpoint():
-    """Manual database initialization endpoint"""
     try:
         success = init_database()
         if success:
@@ -288,18 +273,16 @@ def best_practices_cost():
     loading = request.form.get("loading_pressure", loading_pressure[0])
     country = request.form.get("country", "").strip()
 
-    # Higher scale and higher loading pressure should increase cost estimates.
     try:
         scale_factors = {
-            scales[0]: 1.0,  # Small
-            scales[1]: 2.0,  # Medium
-            scales[2]: 3.0,  # Large
+            scales[0]: 1.0,
+            scales[1]: 2.0,
+            scales[2]: 3.0,
         }
         pressure_factors = {
-            # Note: loading_pressure ordering is ["Everyday", "3-5 days in week", "No loading pressure"]
-            loading_pressure[2]: 1.0,  # No loading pressure
-            loading_pressure[1]: 1.5,  # 3-5 days in week
-            loading_pressure[0]: 2.0,  # Everyday
+            loading_pressure[2]: 1.0,
+            loading_pressure[1]: 1.5,
+            loading_pressure[0]: 2.0,
         }
     except Exception:
         scale_factors = {scale: 1.0}
@@ -454,7 +437,6 @@ Explain key decisions:
     except Exception as e:
         return jsonify({"error": f"OpenAI request failed: {e}"}), 500
 
-    # Save history for logged-in users
     try:
         if current_user.is_authenticated:
             with Session(engine) as s:

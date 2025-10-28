@@ -1,0 +1,95 @@
+# Basic hardening/resources tuned for AKS small footprint
+global:
+  image:
+    tag: v2.11.6   # stable as of late 2025; adjust if you want newer
+
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+applicationSet:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# Expose Argo CD UI publicly via Azure LoadBalancer (get EXTERNAL-IP)
+server:
+  replicas: 1
+
+  # Serve HTTP (no TLS) for quick access. You can switch to Ingress+TLS later.
+  extraArgs:
+    - --insecure
+
+  service:
+    type: LoadBalancer
+    ports:
+      http: 80
+      https: 443
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "false"  # public
+      # If you need a static public IP from an Azure Public IP resource, add:
+      # service.beta.kubernetes.io/azure-load-balancer-ipv4: "<YOUR_PUBLIC_IP>"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Optional basic network policy for the server (off by default)
+  # networkPolicy:
+  #   enabled: true
+  #   additionalLabels: {}
+  #   additionalAnnotations: {}
+
+# Optional: keep notifications off for now (you can enable later)
+notifications:
+  enabled: false
+
+# Dex is OIDC; keep enabled (default) or disable if you won’t use SSO yet
+dex:
+  enabled: true
+
+# Initial admin account behavior (default: enabled, random password in secret)
+configs:
+  params:
+    # Faster UI refresh if you want
+    server.insecure: true
+    applicationsetcontroller.enable.progressive.syncs: true
+
+  cm:
+    # Reconciliation tuning (defaults are fine, you can tweak)
+    timeout.reconciliation: 30s
+
+  rbac:
+    # Keep default admin; you can restrict later
+    policy.default: role:readonly
+
+  # If you want to set a known admin password instead of the random one,
+  # uncomment this and create a bcrypt hash (security tradeoff).
+  # secret:
+  #   argocdServerAdminPassword: "$2a$12$....bcrypt-hash-here...."
+
+# Persistence is not required for Argo CD; it’s stateless (backed by K8s)
+# You can enable if you specifically need PVCs for repoServer cache, etc.
+
