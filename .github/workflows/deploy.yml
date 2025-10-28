@@ -98,7 +98,6 @@ jobs:
         terraform init -upgrade
         break_lease_and_wait
         DESIRED_RG="rg-devops-group6"
-        # Strip any quotes around the name coming from terraform state show output
         CURRENT_RG=$(terraform state show module.resourcegroups.azurerm_resource_group.this 2>/dev/null | awk -F' = ' '/^\s*name\s*=/{gsub(/"/, "", $2); print $2}' | head -n1 || true)
         echo "Desired RG: $DESIRED_RG | State RG: ${CURRENT_RG:-none}"
         if [ -n "$CURRENT_RG" ] && [ "$CURRENT_RG" != "$DESIRED_RG" ]; then
@@ -225,7 +224,6 @@ jobs:
       run: |
         set -e
         kubectl apply -f argocd-apps.yaml
-        # Wait for Application to reach Synced/Healthy (best-effort)
         for i in {1..30}; do
           PHASE=$(kubectl -n argocd get application devops-advisor-app -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
           HEALTH=$(kubectl -n argocd get application devops-advisor-app -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
