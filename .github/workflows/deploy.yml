@@ -205,22 +205,49 @@ jobs:
         set -e
         # Create a self-signed cert valid for 365 days (CN is arbitrary since browser will warn anyway)
         sudo apt-get update -y
-        sudo apt-get install -y openssl
+        sudo apt-get install -y openssl jq
         openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
           -keyout key.pem -out cert.pem -subj "/CN=selfsigned.local"
         # Package into PFX with a static password (not secret-critical; used only for AppGw import)
         PASS="changeit"
         openssl pkcs12 -export -out cert.pfx -inkey key.pem -in cert.pem -passout pass:"$PASS"
 
-        # Upload or update certificate on the Application Gateway under a fixed name
-        if az network application-gateway ssl-cert show -g rg-devops-group6 --gateway-name myAppGwG6 -n devops-advisor-selfsigned >/dev/null 2>&1; then
+        # Discover the effective Application Gateway created/used by AGIC
+        echo "Resolving effective Application Gateway from AKS addon..."
+        for i in $(seq 1 30); do
+          APPGW_ID=$(az aks show -g rg-devops-group6 -n devopsa-aks --query "addonProfiles.ingressApplicationGateway.config.effectiveApplicationGatewayId" -o tsv || true)
+          if [ -n "$APPGW_ID" ] && [ "$APPGW_ID" != "null" ]; then
+            break
+          fi
+          echo "Waiting for effective App Gateway ID... ($i/30)"; sleep 10
+        done
+        if [ -z "$APPGW_ID" ] || [ "$APPGW_ID" = "null" ]; then
+          echo "ERROR: Could not resolve effective Application Gateway ID from AKS."; exit 1
+        fi
+        echo "AppGw ID: $APPGW_ID"
+
+        APPGW_RG=$(echo "$APPGW_ID" | awk -F/ '{for(i=1;i<=NF;i++){if($i=="resourceGroups"){print $(i+1); exit}}}')
+        APPGW_NAME=$(echo "$APPGW_ID" | awk -F/ '{for(i=1;i<=NF;i++){if($i=="applicationGateways"){print $(i+1); exit}}}')
+        echo "Using AppGw RG=$APPGW_RG NAME=$APPGW_NAME"
+
+        # Create or update SSL certificate on the Application Gateway (use correct CLI args)
+        if az network application-gateway ssl-cert show -g "$APPGW_RG" --gateway-name "$APPGW_NAME" -n devops-advisor-selfsigned >/dev/null 2>&1; then
           az network application-gateway ssl-cert update \
-            -g rg-devops-group6 --gateway-name myAppGwG6 \
-            -n devops-advisor-selfsigned --certificate-file cert.pfx --password "$PASS"
+            -g "$APPGW_RG" --gateway-name "$APPGW_NAME" \
+            -n devops-advisor-selfsigned --cert-file cert.pfx --cert-password "$PASS"
         else
-          az network application-gateway ssl-cert add \
-            -g rg-devops-group6 --gateway-name myAppGwG6 \
-            -n devops-advisor-selfsigned --certificate-file cert.pfx --password "$PASS"
+          az network application-gateway ssl-cert create \
+            -g "$APPGW_RG" --gateway-name "$APPGW_NAME" \
+            -n devops-advisor-selfsigned --cert-file cert.pfx --cert-password "$PASS"
+        fi
+
+        # Show public IP (helpful to click after run)
+        PIP_ID=$(az network application-gateway show -g "$APPGW_RG" -n "$APPGW_NAME" --query "frontendPublicIpConfigurations[0].publicIpAddress.id" -o tsv || true)
+        if [ -n "$PIP_ID" ]; then
+          APP_IP=$(az network public-ip show --ids "$PIP_ID" --query ipAddress -o tsv || true)
+          if [ -n "$APP_IP" ]; then
+            echo "HTTPS URL (self-signed): https://$APP_IP"
+          fi
         fi
 
         # Cleanup local files
