@@ -7,16 +7,15 @@ spec:
   project: default
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring-argo     # <— move to its own namespace
+    namespace: monitoring-argo
   sources:
   - repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
     targetRevision: "*"
     helm:
-      releaseName: kps-argo         # <— different release name
+      releaseName: kps-argo
       valueFiles:
         - $values/values-prometheus.yaml
-      # OPTIONAL: let this Prometheus scrape across all namespaces (incl. your old stack)
       values: |
         prometheus:
           prometheusSpec:
@@ -25,8 +24,12 @@ spec:
             ruleNamespaceSelector: {}
   - repoURL: https://github.com/anas-443005129/master_projectg6.git
     targetRevision: HEAD
-    path: values                     # or use the include filter if your values stay at repo root
+    path: .
     ref: values
+    directory:
+      recurse: false
+      include: |
+        values-prometheus.yaml
   syncPolicy:
     automated:
       prune: true
