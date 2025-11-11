@@ -6,9 +6,11 @@ import { memo, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
+import { CanvasCard, type CanvasCard as CanvasCardType } from "./canvas-card";
 import { useDataStream } from "./data-stream-provider";
 import { DocumentToolResult } from "./document";
 import { DocumentPreview } from "./document-preview";
+import { FollowUpSuggestions } from "./follow-up-suggestions";
 import { MessageContent } from "./elements/message";
 import { Response } from "./elements/response";
 import {
@@ -25,6 +27,69 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
 
+// Helper function to extract canvas cards from message text
+function extractCanvasCards(text: string): { cards: CanvasCardType[], cleanText: string } {
+  const cards: CanvasCardType[] = [];
+  let cleanText = text;
+  
+  // Match code blocks with a title prefix pattern
+  const codeBlockPattern = /```(\w+)?\s*\n([\s\S]*?)```/g;
+  const matches = [...text.matchAll(codeBlockPattern)];
+  
+  matches.forEach((match, index) => {
+    const language = match[1] || "text";
+    const content = match[2].trim();
+    
+    // Only create canvas cards for substantial code blocks
+    if (content.length > 100) {
+      const title = language === "terraform" ? "Infrastructure Code" :
+                    language === "yaml" || language === "yml" ? "Configuration" :
+                    language === "json" && content.includes("pricing") ? "Pricing Structure" :
+                    "Code Snippet";
+      
+      cards.push({
+        id: `${index}`,
+        title,
+        type: language === "json" && content.includes("pricing") ? "pricing" : "code",
+        content,
+        language,
+      });
+    }
+  });
+  
+  return { cards, cleanText };
+}
+
+// Helper function to generate follow-up suggestions based on message context
+function generateFollowUpSuggestions(text: string): string[] {
+  const suggestions: string[] = [];
+  
+  if (text.toLowerCase().includes("cost") || text.toLowerCase().includes("pricing")) {
+    suggestions.push("How can I optimize these costs?");
+    suggestions.push("Show me a cost breakdown by service");
+  }
+  if (text.toLowerCase().includes("architecture") || text.toLowerCase().includes("design")) {
+    suggestions.push("What are the scalability considerations?");
+    suggestions.push("How do I add high availability?");
+  }
+  if (text.toLowerCase().includes("terraform") || text.toLowerCase().includes("infrastructure")) {
+    suggestions.push("Add monitoring and logging");
+    suggestions.push("Include disaster recovery setup");
+  }
+  if (text.toLowerCase().includes("region") || text.toLowerCase().includes("multi-region")) {
+    suggestions.push("Compare latency across regions");
+    suggestions.push("What's the cost difference?");
+  }
+  
+  // Default suggestions if none matched
+  if (suggestions.length === 0) {
+    suggestions.push("Tell me more about this");
+    suggestions.push("What are the next steps?");
+  }
+  
+  return suggestions.slice(0, 4); // Limit to 4 suggestions
+}
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -34,6 +99,7 @@ const PurePreviewMessage = ({
   regenerate,
   isReadonly,
   requiresScrollPadding,
+  sendMessage,
 }: {
   chatId: string;
   message: ChatMessage;
@@ -43,6 +109,7 @@ const PurePreviewMessage = ({
   regenerate: UseChatHelpers<ChatMessage>["regenerate"];
   isReadonly: boolean;
   requiresScrollPadding: boolean;
+  sendMessage?: UseChatHelpers<ChatMessage>["sendMessage"];
 }) => {
   const [mode, setMode] = useState<"view" | "edit">("view");
 
@@ -122,11 +189,14 @@ const PurePreviewMessage = ({
 
             if (type === "text") {
               if (mode === "view") {
+                const { cards, cleanText } = message.role === "assistant" ? extractCanvasCards(part.text) : { cards: [], cleanText: part.text };
+                const followUpSuggestions = message.role === "assistant" && !isLoading ? generateFollowUpSuggestions(part.text) : [];
+                
                 return (
-                  <div key={key}>
+                  <div key={key} className="flex w-full flex-col gap-3">
                     <MessageContent
                       className={cn({
-                        "w-fit break-words rounded-2xl px-3 py-2 text-right text-white":
+                        "w-fit wrap-break-word rounded-2xl px-3 py-2 text-right text-white":
                           message.role === "user",
                         "bg-transparent px-0 py-0 text-left":
                           message.role === "assistant",
@@ -138,8 +208,23 @@ const PurePreviewMessage = ({
                           : undefined
                       }
                     >
-                      <Response>{sanitizeText(part.text)}</Response>
+                      <Response>{sanitizeText(cleanText || part.text)}</Response>
                     </MessageContent>
+                    
+                    {cards.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {cards.map((card) => (
+                          <CanvasCard key={card.id} card={card} />
+                        ))}
+                      </div>
+                    )}
+                    
+                    {sendMessage && followUpSuggestions.length > 0 && (
+                      <FollowUpSuggestions 
+                        suggestions={followUpSuggestions}
+                        sendMessage={sendMessage}
+                      />
+                    )}
                   </div>
                 );
               }

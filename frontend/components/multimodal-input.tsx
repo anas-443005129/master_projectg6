@@ -25,6 +25,7 @@ import { myProvider } from "@/lib/ai/providers";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { cn } from "@/lib/utils";
+import { CloudContextSelector, type CloudContext } from "./cloud-context-selector";
 import { Context } from "./elements/context";
 import {
   PromptInput,
@@ -62,6 +63,7 @@ function PureMultimodalInput({
   selectedVisibilityType,
   selectedModelId,
   onModelChange,
+  onCloudContextChange,
   usage,
 }: {
   chatId: string;
@@ -78,6 +80,7 @@ function PureMultimodalInput({
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
   onModelChange?: (modelId: string) => void;
+  onCloudContextChange?: (context: CloudContext) => void;
   usage?: AppUsage;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -128,6 +131,10 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+
+  const handleCloudContextChange = useCallback((context: CloudContext) => {
+    onCloudContextChange?.(context);
+  }, [onCloudContextChange]);
 
   const submitForm = useCallback(() => {
     window.history.pushState({}, "", `/chat/${chatId}`);
@@ -291,11 +298,17 @@ function PureMultimodalInput({
       {messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (
-          <SuggestedActions
-            chatId={chatId}
-            selectedVisibilityType={selectedVisibilityType}
-            sendMessage={sendMessage}
-          />
+          <>
+            <SuggestedActions
+              chatId={chatId}
+              selectedVisibilityType={selectedVisibilityType}
+              sendMessage={sendMessage}
+            />
+            <CloudContextSelector 
+              onContextChange={handleCloudContextChange} 
+              className="justify-start"
+            />
+          </>
         )}
 
       <input

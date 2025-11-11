@@ -42,6 +42,13 @@ export type RequestHints = {
   country: Geo["country"];
 };
 
+export type CloudContext = {
+  provider: string;
+  scale: string;
+  traffic: string;
+  region: string;
+};
+
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 About the origin of user's request:
 - lat: ${requestHints.latitude}
@@ -50,20 +57,39 @@ About the origin of user's request:
 - country: ${requestHints.country}
 `;
 
+export const getCloudContextPrompt = (cloudContext?: CloudContext) => {
+  if (!cloudContext) return "";
+  
+  return `\
+
+**Cloud Infrastructure Context:**
+The user is planning infrastructure with the following requirements:
+- Cloud Provider: ${cloudContext.provider}
+- Application Scale: ${cloudContext.scale}
+- Traffic Pattern: ${cloudContext.traffic}
+- Target Region: ${cloudContext.region}
+
+When providing recommendations, architecture advice, or cost estimates, consider these parameters and tailor your response accordingly. If discussing costs, provide estimates for ${cloudContext.provider} in the ${cloudContext.region} region. For architecture, consider the ${cloudContext.scale} scale and ${cloudContext.traffic} traffic pattern.
+`;
+};
+
 export const systemPrompt = ({
   selectedChatModel,
   requestHints,
+  cloudContext,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
+  cloudContext?: CloudContext;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
+  const cloudPrompt = getCloudContextPrompt(cloudContext);
 
   if (selectedChatModel === "chat-model-reasoning") {
-    return `${regularPrompt}\n\n${requestPrompt}`;
+    return `${regularPrompt}\n\n${requestPrompt}${cloudPrompt}`;
   }
 
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${regularPrompt}\n\n${requestPrompt}${cloudPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `

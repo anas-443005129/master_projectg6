@@ -63,10 +63,21 @@ export function Chat({
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
   const [currentModelId, setCurrentModelId] = useState(initialChatModel);
   const currentModelIdRef = useRef(currentModelId);
+  const [cloudContext, setCloudContext] = useState({
+    provider: "AWS",
+    scale: "Small (<1k users/day)",
+    traffic: "Steady",
+    region: "US East",
+  });
+  const cloudContextRef = useRef(cloudContext);
 
   useEffect(() => {
     currentModelIdRef.current = currentModelId;
   }, [currentModelId]);
+
+  useEffect(() => {
+    cloudContextRef.current = cloudContext;
+  }, [cloudContext]);
 
   const {
     messages,
@@ -91,6 +102,7 @@ export function Chat({
             message: request.messages.at(-1),
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibilityType,
+            cloudContext: cloudContextRef.current,
             ...request.body,
           },
         };
@@ -169,6 +181,7 @@ export function Chat({
           isReadonly={isReadonly}
           messages={messages}
           regenerate={regenerate}
+          sendMessage={sendMessage}
           selectedModelId={initialChatModel}
           setMessages={setMessages}
           status={status}
@@ -182,6 +195,7 @@ export function Chat({
               chatId={id}
               input={input}
               messages={messages}
+              onCloudContextChange={setCloudContext}
               onModelChange={setCurrentModelId}
               selectedModelId={currentModelId}
               selectedVisibilityType={visibilityType}
