@@ -5,6 +5,7 @@
 A premium, modern landing page for a DevOps AI Agent featuring:
 
 ### Visual Features
+
 - **Glassmorphism Design**: Frosted glass effects with backdrop blur
 - **MongoDB-Inspired Green Theme**: Custom green color palette (`hsl(142 76% 45%)`)
 - **Animated Gradients**: Flowing background gradients and borders
@@ -14,32 +15,38 @@ A premium, modern landing page for a DevOps AI Agent featuring:
 ### Sections
 
 1. **Hero Section**
+
    - Video background with demo playback
    - Animated floating cards showing deployment success
    - Stats showcase (10k+ users, 99.9% uptime)
    - Primary and secondary CTAs
 
 2. **Features Grid**
+
    - 9 feature cards with icons
    - Hover animations and glass effects
    - Covers: Deployments, Git Ops, Security, Performance, Multi-Cloud, etc.
 
 3. **How It Works**
+
    - 4-step process walkthrough
    - Large images with gradient overlays
    - Alternating layout for visual interest
 
 4. **Use Cases**
+
    - 6 specialized use case cards
    - Each with unique gradient color scheme
    - Expandable benefits lists
 
 5. **Testimonials**
+
    - 6 customer testimonials
    - Avatar images with ratings
    - Glass card styling
 
 6. **Call-to-Action**
+
    - Prominent final CTA section
    - Trust indicators (AWS, Google Cloud, Azure logos)
    - Multiple conversion paths
@@ -61,6 +68,7 @@ A premium, modern landing page for a DevOps AI Agent featuring:
 ## 🎬 Assets Used
 
 ### Images
+
 - `/images/devops-1.png` - Step 1: Connect Repository
 - `/images/devops-2.png` - Step 2: Configure Pipeline
 - `/images/devops-3.png` - Step 3: Deploy
@@ -68,16 +76,19 @@ A premium, modern landing page for a DevOps AI Agent featuring:
 - `/images/demo-thumbnail.png` - Video poster image
 
 ### Video
+
 - `/images/devops-video.mp4` - Hero section demo video
 
 ## 🎨 Design System
 
 ### Colors
+
 - **Primary**: `hsl(142 76% 45%)` (MongoDB Green)
 - **Background Light**: `hsl(120 20% 98%)`
 - **Background Dark**: `hsl(160 20% 8%)`
 
 ### Utility Classes (from globals.css)
+
 - `.glass` / `.glass-dark` - Glassmorphism effects
 - `.glass-card` / `.glass-card-dark` - Card glassmorphism
 - `.gradient-primary` - Green gradient background
@@ -91,6 +102,7 @@ A premium, modern landing page for a DevOps AI Agent featuring:
 ## 🔧 Components
 
 ### Landing Components
+
 - `navbar.tsx` - Sticky navigation with mobile menu
 - `hero.tsx` - Hero section with video and stats
 - `features.tsx` - Features grid
@@ -104,6 +116,7 @@ A premium, modern landing page for a DevOps AI Agent featuring:
 ## 📱 Responsive Design
 
 All components are fully responsive:
+
 - **Mobile**: Single column, stacked elements
 - **Tablet**: 2-column grids
 - **Desktop**: 3-column grids, side-by-side layouts
@@ -128,6 +141,7 @@ All components are fully responsive:
 The landing page is the default route (`/`) and will be shown to all visitors before authentication.
 
 To view:
+
 ```bash
 cd frontend
 pnpm run dev
@@ -138,6 +152,7 @@ Then visit `http://localhost:3000`
 ## 🎨 Customization
 
 To customize:
+
 1. **Copy**: Update copy in each component file
 2. **Images**: Replace images in `/public/images/`
 3. **Colors**: Modify theme in `/app/globals.css`
@@ -146,6 +161,7 @@ To customize:
 ## 📊 Mock Day Ready
 
 This landing page is designed to impress for your mock day presentation:
+
 - Premium visual design that stands out
 - Professional animations and interactions
 - Clear value proposition
