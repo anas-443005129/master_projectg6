@@ -46,7 +46,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       loading: "Deleting all chats...",
       success: () => {
         mutate(unstable_serialize(getChatHistoryPaginationKey));
-        router.push("/");
+        router.push("/chat");
         setShowDeleteAllDialog(false);
         return "All chats deleted successfully";
       },
@@ -62,7 +62,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             <div className="flex flex-row items-center justify-between">
               <Link
                 className="flex flex-row items-center gap-3"
-                href="/"
+                href="/chat"
                 onClick={() => {
                   setOpenMobile(false);
                 }}
@@ -95,7 +95,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       className="h-8 p-1 md:h-fit md:p-2"
                       onClick={() => {
                         setOpenMobile(false);
-                        router.push("/");
+                        router.push("/chat");
                         router.refresh();
                       }}
                       type="button"

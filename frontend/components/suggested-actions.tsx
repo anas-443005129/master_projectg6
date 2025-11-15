@@ -23,7 +23,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
 
   return (
     <div
-      className="grid w-full gap-2 sm:grid-cols-2"
+      className="grid w-full gap-3 sm:grid-cols-2"
       data-testid="suggested-actions"
     >
       {suggestedActions.map((suggestedAction, index) => (
@@ -33,9 +33,11 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
           initial={{ opacity: 0, y: 20 }}
           key={suggestedAction}
           transition={{ delay: 0.05 * index }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           <Suggestion
-            className="h-auto w-full whitespace-normal p-3 text-left"
+            className="h-auto w-full whitespace-normal p-4 text-left glass-card dark:glass-card-dark hover-lift border-gradient relative overflow-hidden group"
             onClick={(suggestion) => {
               window.history.replaceState({}, "", `/chat/${chatId}`);
               sendMessage({
@@ -45,7 +47,8 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
             }}
             suggestion={suggestedAction}
           >
-            {suggestedAction}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity shimmer" />
+            <span className="relative z-10">{suggestedAction}</span>
           </Suggestion>
         </motion.div>
       ))}

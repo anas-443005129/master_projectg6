@@ -63,50 +63,51 @@ export function CanvasCard({ card }: CanvasCardProps) {
   return (
     <>
       <button
-        className="group flex w-full max-w-md flex-row items-center gap-3 rounded-lg border border-border bg-muted/30 p-3 text-left transition-all hover:border-muted-foreground/30 hover:bg-muted/50"
+        className="group flex w-full max-w-md flex-row items-center gap-3 rounded-xl p-4 text-left transition-all glass-card dark:glass-card-dark hover-lift animated-border"
         onClick={() => setIsOpen(true)}
         type="button"
       >
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-background ring-1 ring-border group-hover:ring-muted-foreground/30">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-lg gradient-primary text-white shadow-lg">
           {getIcon()}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate font-medium text-sm">{card.title}</div>
-          <div className="text-muted-foreground text-xs">{getTypeLabel()}</div>
+          <div className="truncate font-semibold text-sm">{card.title}</div>
+          <div className="text-muted-foreground text-xs font-medium">{getTypeLabel()}</div>
         </div>
-        <div className="text-muted-foreground text-xs">View →</div>
+        <div className="text-primary font-medium text-sm">View →</div>
       </button>
 
       <Sheet onOpenChange={setIsOpen} open={isOpen}>
-        <SheetContent className="w-full overflow-auto sm:max-w-3xl">
+        <SheetContent className="w-full overflow-auto sm:max-w-3xl glass-dark backdrop-blur-xl border-white/10">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              {getIcon()}
+            <SheetTitle className="flex items-center gap-3 text-gradient text-lg">
+              <div className="flex size-10 items-center justify-center rounded-lg gradient-primary text-white">
+                {getIcon()}
+              </div>
               {card.title}
             </SheetTitle>
           </SheetHeader>
-          <div className="relative mt-4 flex-1">
-            <div className="mb-2 flex justify-end">
+          <div className="relative mt-6 flex-1">
+            <div className="mb-3 flex justify-end">
               <Button
-                className="h-8 gap-2"
+                className="h-9 gap-2 gradient-primary text-white hover-lift glow-green"
                 onClick={handleCopy}
                 size="sm"
-                variant="secondary"
               >
                 {isCopied ? (
                   <>
                     <CheckCircleFillIcon size={14} />
-                    Copied
+                    Copied!
                   </>
                 ) : (
                   <>
                     <CopyIcon size={14} />
-                    Copy
+                    Copy Code
                   </>
                 )}
               </Button>
             </div>
-            <pre className="overflow-x-auto rounded-lg border bg-muted p-4 font-mono text-xs">
+            <pre className="overflow-x-auto rounded-xl border border-primary/20 bg-black/40 p-5 font-mono text-sm shadow-2xl">
               <code className={card.language ? `language-${card.language}` : ""}>
                 {card.content}
               </code>

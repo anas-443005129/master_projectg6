@@ -49,12 +49,12 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
   };
 
   return (
-    <div className={`flex flex-wrap gap-2 ${className || ""}`}>
+    <div className={`flex flex-wrap gap-2.5 ${className || ""}`}>
       <Select
         value={context.provider}
         onValueChange={(value) => updateContext("provider", value)}
       >
-        <SelectTrigger className="h-8 w-auto min-w-[130px] gap-2 rounded-lg border-muted-foreground/20 bg-muted/50 px-2 text-xs">
+        <SelectTrigger className="h-9 w-auto min-w-[140px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
           <CodeIcon size={14} />
           <SelectValue placeholder="Provider" />
         </SelectTrigger>
@@ -71,7 +71,7 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
         value={context.scale}
         onValueChange={(value) => updateContext("scale", value)}
       >
-        <SelectTrigger className="h-8 w-auto min-w-40 gap-2 rounded-lg border-muted-foreground/20 bg-muted/50 px-2 text-xs">
+        <SelectTrigger className="h-9 w-auto min-w-[200px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
           <GaugeIcon size={14} />
           <SelectValue placeholder="Scale" />
         </SelectTrigger>
@@ -88,7 +88,7 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
         value={context.traffic}
         onValueChange={(value) => updateContext("traffic", value)}
       >
-        <SelectTrigger className="h-8 w-auto min-w-[140px] gap-2 rounded-lg border-muted-foreground/20 bg-muted/50 px-2 text-xs">
+        <SelectTrigger className="h-9 w-auto min-w-[150px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
           <TrendingUpIcon size={14} />
           <SelectValue placeholder="Traffic" />
         </SelectTrigger>
@@ -105,7 +105,7 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
         value={context.region}
         onValueChange={(value) => updateContext("region", value)}
       >
-        <SelectTrigger className="h-8 w-auto min-w-[140px] gap-2 rounded-lg border-muted-foreground/20 bg-muted/50 px-2 text-xs">
+        <SelectTrigger className="h-9 w-auto min-w-[180px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
           <GlobeIcon size={14} />
           <SelectValue placeholder="Region" />
         </SelectTrigger>

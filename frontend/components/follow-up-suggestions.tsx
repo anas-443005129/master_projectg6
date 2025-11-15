@@ -20,31 +20,34 @@ function PureFollowUpSuggestions({
   }
 
   return (
-    <div className="mt-4 flex w-full flex-col gap-2">
-      <div className="text-muted-foreground text-xs font-medium">
-        Follow-up questions:
+    <div className="mt-5 flex w-full flex-col gap-3">
+      <div className="text-gradient text-sm font-semibold flex items-center gap-2">
+        <span className="inline-block size-1.5 rounded-full bg-primary animate-pulse" />
+        Continue the conversation
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5">
         {suggestions.map((suggestion, index) => (
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            initial={{ opacity: 0, y: 10 }}
+          <motion.button
             key={suggestion}
-            transition={{ delay: 0.05 * index }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 * index }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="group relative overflow-hidden rounded-full px-4 py-2 text-sm font-medium transition-all glass dark:glass-dark border border-primary/30 hover-lift"
+            onClick={() => {
+              sendMessage({
+                role: "user",
+                parts: [{ type: "text", text: suggestion }],
+              });
+            }}
           >
-            <Suggestion
-              className="h-auto whitespace-normal rounded-full border border-border bg-background px-3 py-1.5 text-left text-xs hover:bg-muted"
-              onClick={(text) => {
-                sendMessage({
-                  role: "user",
-                  parts: [{ type: "text", text }],
-                });
-              }}
-              suggestion={suggestion}
-            >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity shimmer" />
+            <span className="relative z-10 flex items-center gap-2">
+              <span className="text-primary">→</span>
               {suggestion}
-            </Suggestion>
-          </motion.div>
+            </span>
+          </motion.button>
         ))}
       </div>
     </div>
