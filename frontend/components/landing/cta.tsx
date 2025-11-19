@@ -115,13 +115,12 @@ export function CTA() {
             </p>
             <div className="flex flex-wrap gap-8 justify-center items-center">
               {[
-                { name: "Azure", icon: "☁️" },
-                { name: "AWS", icon: "🔧" },
-                { name: "GCP", icon: "🌐" }
+                { name: "Azure", src: "/images/azure.svg" },
+                { name: "AWS", src: "/images/aws.svg" },
+                { name: "GCP", src: "/images/gcp.svg" }
               ].map((tech) => (
-                <div key={tech.name} className="flex items-center gap-2">
-                  <span className="text-2xl">{tech.icon}</span>
-                  <span className="font-bold text-lg text-primary">{tech.name}</span>
+                <div key={tech.name} className="flex items-center gap-3">
+                  <img src={tech.src} alt={tech.name} className="w-8 h-8" />
                 </div>
               ))}
             </div>

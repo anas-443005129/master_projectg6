@@ -52,10 +52,10 @@ export function LandingFooter() {
           {/* Brand Column */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-4">
-              <div className="flex size-10 items-center justify-center rounded-lg gradient-primary text-white">
-                <Sparkles size={20} />
+              <div className="flex items-center justify-center w-14 overflow-hidden">
+                <img src="/images/logo.svg" alt="InfraTech logo" className="h-full w-full object-cover" />
               </div>
-              <span className="text-gradient">DevOps AI</span>
+              <span className="text-gradient">InfraTech</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
               AI-powered DevOps automation that helps teams ship faster with confidence.
@@ -117,7 +117,7 @@ export function LandingFooter() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-primary/20 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground text-center md:text-left">
-            © 2025 DevOps AI. All rights reserved.
+            © 2025 InfraTech. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">

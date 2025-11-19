@@ -10,6 +10,7 @@ const navItems = [
   { href: "#features", label: "Features" },
   { href: "#how-it-works", label: "How It Works" },
   { href: "#use-cases", label: "Use Cases" },
+  { href: "#pricing", label: "Pricing" },
   { href: "#testimonials", label: "Testimonials" },
 ];
 
@@ -20,10 +21,10 @@ export function LandingNavbar() {
     <header className="sticky top-0 z-50 w-full glass dark:glass-dark border-b border-primary/20">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="flex size-10 items-center justify-center rounded-lg gradient-primary text-white">
-            <Sparkles size={20} />
+          <div className="flex items-center justify-center w-14 overflow-hidden">
+            <img src="/images/logo.svg" alt="DevOps AI logo" className="h-full w-full object-cover" />
           </div>
-          <span className="text-gradient">DevOps AI</span>
+          <span className="text-gradient">InfraTech</span>
         </Link>
 
         {/* Desktop Navigation */}

@@ -182,6 +182,16 @@
     position: relative;
   }
 
+  /* Saudi Riyal Font - Icon classes */
+  .icon-saudi_riyal,
+  .icon-saudi_riyal_bold,
+  .icon-saudi_riyal_new,
+  .icon-saudi_riyal_bold_new {
+    display: inline-block;
+    font-size: inherit;
+    color: inherit;
+  }
+
   body::before {
     content: '';
     position: fixed;
