@@ -270,3 +270,15 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 - Azure for cloud infrastructure
 - Prometheus & Grafana for monitoring
 - All open-source contributors
+
+## Subproject READMEs
+Short READMEs have been added to the main subfolders to help developers get started quickly:
+
+- `frontend/` - Next.js frontend (setup, dev, build commands)
+- `k8s_solution/` - Kubernetes manifests and apply order
+- `argo-apps/` - ArgoCD application manifests and notes
+- `terraform/` - Terraform usage and module overview
+- `static/` - Static assets and quick preview steps
+- `templates/` - Flask HTML templates usage
+
+See the corresponding `README.md` in each folder for concise setup and run instructions.

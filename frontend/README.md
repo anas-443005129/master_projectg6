@@ -1,3 +1,36 @@
+# Frontend (Next.js)
+
+This folder contains the frontend application (Next.js / React) used by the project.
+
+Quick start
+
+- Requirements: Node.js (>=16/18 recommended), `pnpm` (project uses pnpm lockfile).
+- Install dependencies:
+
+```bash
+cd frontend
+pnpm install
+```
+
+- Run in development mode:
+
+```bash
+pnpm dev
+```
+
+- Build for production:
+
+```bash
+pnpm build
+pnpm start
+```
+
+Notes
+- Environment values (if required) are set via `.env` or the platform deployment environment (Vercel, Netlify, etc.).
+- The app folder contains `app/`, `components/`, and `lib/` with core UI and integration code.
+- For CI/CD we use the repository's workflows or Vercel for easy deployments.
+
+If you need local API integration use the Flask backend (see root `Flask_App.py`).
 <a href="https://chat.vercel.ai/">
   <img alt="Next.js 14 and App Router-ready AI chatbot." src="app/(chat)/opengraph-image.png">
   <h1 align="center">Chat SDK</h1>
