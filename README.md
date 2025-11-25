@@ -1,284 +1,1277 @@
-# LLM DevOps Advisor Platform
+# 🚀 LLM DevOps Advisor Platform
 
 ## Overview
 
-LLM DevOps Advisor is a cloud-native, production-grade platform that leverages Large Language Models (LLMs) to provide expert DevOps, cloud cost, and performance optimization guidance. The application is built with Python (Flask), containerized for scalable deployment, and orchestrated using Kubernetes (AKS) with full infrastructure-as-code (Terraform), CI/CD automation (GitHub Actions), and advanced monitoring (Prometheus, Grafana). It is designed for extensibility, security, and operational excellence in modern cloud environments.
+**LLM DevOps Advisor** is a full-stack, production-grade SaaS platform that uses AI to provide intelligent DevOps guidance. It combines:
+- **Flask backend** (Python 3.11) with OpenAI API integration for LLM-powered recommendations
+- **Modern Next.js frontend** (React 19 RC, TypeScript, Tailwind CSS 4.1) with rich editors and real-time UI
+- **PostgreSQL database** with SQLAlchemy ORM and Drizzle ORM (for frontend)
+- **Kubernetes orchestration** (Azure AKS) with auto-scaling, persistent storage, and secrets management
+- **Infrastructure-as-Code** (Terraform) for reproducible Azure resource provisioning
+- **GitOps deployment** via ArgoCD with automated CI/CD (GitHub Actions)
+- **Monitoring & observability** (Prometheus, Grafana, OpenTelemetry)
+
+The platform intelligently generates **cost optimization**, **performance recommendations**, **project structures**, **Terraform code**, and **infrastructure provisioning scripts** tailored to cloud providers (AWS, Azure, GCP) and regional constraints.
 
 ---
 
 ## Table of Contents
+- [Quick Start](#quick-start)
 - [Features](#features)
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
-- [Folder Structure](#folder-structure)
+- [Project Structure](#project-structure)
 - [Setup & Installation](#setup--installation)
-- [Configuration](#configuration)
-- [Development Workflow](#development-workflow)
-- [Infrastructure Provisioning](#infrastructure-provisioning)
-- [CI/CD Pipeline](#cicd-pipeline)
-- [Kubernetes Deployment](#kubernetes-deployment)
-- [Monitoring & Observability](#monitoring--observability)
+- [Development Guide](#development-guide)
+- [Deployment](#deployment)
+- [API Endpoints](#api-endpoints)
+- [Database Schema](#database-schema)
+- [Infrastructure](#infrastructure)
+- [Monitoring](#monitoring)
 - [Security](#security)
-- [Usage](#usage)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
 
+
+---
+
+## Quick Start
+
+### Backend (Flask API)
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+export OPENAI_API_KEY=sk-your-key-here
+export FLASK_SECRET_KEY=your-secret-key
+export DB_HOST=localhost DB_PORT=5432 DB_USER=postgres DB_PASSWORD=yourpass DB_NAME=devops_advisor_db
+
+# Start Flask development server
+python Flask_App.py
+# Access at http://localhost:5001
+```
+
+### Frontend (Next.js)
+```bash
+cd frontend
+
+# Install dependencies (uses pnpm)
+pnpm install
+
+# Development mode with Turbo
+pnpm dev
+# Access at http://localhost:3000
+
+# Build for production
+pnpm build
+pnpm start
+```
+
+### Docker (Full Stack Local)
+```bash
+# Build Flask image
+docker build -t devops-advisor:latest .
+
+# Run with environment variables
+docker run -p 5001:5001 \
+  -e OPENAI_API_KEY=sk-your-key \
+  -e FLASK_SECRET_KEY=your-secret \
+  -e DB_HOST=postgres DB_PORT=5432 \
+  -e DB_USER=postgres DB_PASSWORD=yourpass \
+  devops-advisor:latest
+```
+
+### Kubernetes (Production)
+```bash
+# Connect to AKS cluster
+az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks
+
+# Apply manifests in order
+kubectl apply -f k8s_solution/namespace.yml
+kubectl apply -f k8s_solution/db-secret.yml
+kubectl apply -f k8s_solution/app-secret.yml
+kubectl apply -f k8s_solution/db-pvc.yml
+kubectl apply -f k8s_solution/db-deploy.yml
+kubectl apply -f k8s_solution/db-svc.yml
+kubectl apply -f k8s_solution/api-deploy.yml
+kubectl apply -f k8s_solution/api-svc-lb.yml
+kubectl apply -f k8s_solution/api-hpa.yml
+
+# Check status
+kubectl get pods -n devops-advisor
+kubectl get svc -n devops-advisor -w  # Watch for external IP
+```
+
 ---
 
 ## Features
-- **LLM-powered DevOps Guidance:** Interactive web app for cloud cost and performance optimization using OpenAI models.
-- **User Authentication:** Secure login and registration with hashed passwords and session management.
-- **History Tracking:** Stores user queries and LLM responses for cost, performance, and architecture recommendations.
-- **Multi-cloud Support:** Context-aware recommendations for AWS, Azure, and Google Cloud.
-- **Cost & Performance Analysis:** Dynamic prompts for region, scale, and workload, with SAR-based cost breakdowns.
-- **Infrastructure-as-Code:** Modular Terraform for Azure resources (AKS, ACR, PostgreSQL, monitoring, etc.).
-- **Containerization:** Dockerfile and docker-compose for local development and production builds.
-- **Kubernetes Orchestration:** Manifests for app and database deployments, secrets, ingress, HPA, and service exposure.
-- **CI/CD Automation:** GitHub Actions workflows for provisioning, building, pushing, and deploying.
-- **Monitoring & Observability:** Prometheus and Grafana integration for metrics and dashboards.
-- **Secrets Management:** Secure handling of API keys and DB credentials via Kubernetes secrets and Key Vault.
+- **LLM-powered DevOps Guidance:** Five AI endpoints for cost, performance, structure, Terraform, and CLI generation with OpenAI GPT-4o-mini
+- **Multi-cloud Support:** Context-aware recommendations for AWS, Azure, and Google Cloud with region accuracy validation
+- **Cost Optimization:** Saudi Riyal (SAR) pricing, regional cost breakdowns, scale-aware multipliers, and best practices
+- **Performance Optimization:** Latency analysis, CDN strategies, autoscaling patterns, database optimization, regional performance impact
+- **Project Structure Generation:** AI-inferred tech stack detection (React, Next.js, Vue, Angular, FastAPI, Express, etc.) with production-ready folder layouts
+- **Terraform Code Generation:** Complete modular Terraform code with networking, compute, database, security, monitoring, storage, registry, and CDN modules
+- **Infrastructure CLI Scripts:** Bash/PowerShell scripts for one-command infrastructure provisioning (Azure, AWS, GCP)
+- **Modern Frontend:** Next.js 15 with React 19 RC, TypeScript, Tailwind CSS 4.1, CodeMirror editors, ProseMirror rich text, Drizzle ORM
+- **User Authentication:** Secure registration/login with hashed passwords (bcrypt), session management via Flask-Login
+- **Query History:** Full audit trail of all LLM recommendations per user (searchable, exportable as JSON)
+- **Auto-scaling:** Kubernetes HPA (2-5 replicas based on CPU 60% threshold)
+- **Persistent Storage:** 10Gi PostgreSQL volume with automated backups via container orchestration
+- **Secrets Management:** All API keys/credentials via Kubernetes secrets (ready for Azure Key Vault integration)
+- **GitOps Deployment:** ArgoCD with auto-sync, auto-prune, and auto-heal for continuous deployment
+- **Monitoring & Observability:** Prometheus metrics, Grafana dashboards, OpenTelemetry instrumentation, structured logging
 
 ---
 
 ## Architecture
 
-- **Frontend:** HTML templates served by Flask (can be extended to React/Vue).
-- **Backend:** Flask app with SQLAlchemy ORM, OpenAI API integration, and RESTful endpoints.
-- **Database:** PostgreSQL, containerized and managed via Kubernetes and Terraform.
-- **Containerization:** Python 3.11-slim base, non-root user, healthchecks, and environment variable injection.
-- **Orchestration:** AKS cluster with namespace isolation, readiness/liveness probes, resource requests/limits.
-- **Infrastructure:** Terraform modules for resource groups, AKS, ACR, disks, and more.
-- **CI/CD:** Multi-stage GitHub Actions workflows for infra provisioning, image build/push, platform config, and exposure.
-- **Monitoring:** Prometheus and Grafana deployed via Helm/Ansible, with secrets and access control.
-- **Secrets:** Managed via Kubernetes secrets and optionally Azure Key Vault.
+### System Design
+```
+┌─────────────────┐          ┌─────────────────┐
+│  Next.js        │          │  Flask Backend  │
+│  Frontend       │◄────────►│  (Python 3.11)  │
+│  (React 19 RC)  │          │  OpenAI API     │
+└────────┬────────┘          └────────┬────────┘
+         │                            │
+         │         PostgreSQL        │
+         └───────────┬───────────────┘
+                     │
+         ┌───────────▼───────────┐
+         │  Kubernetes (AKS)     │
+         │  ├─ Namespace         │
+         │  ├─ Deployments       │
+         │  ├─ Services          │
+         │  ├─ StatefulSets      │
+         │  ├─ Ingress (AGIC)    │
+         │  └─ HPA (2-5 replicas)│
+         └───────────┬───────────┘
+                     │
+         ┌───────────▼───────────┐
+         │  Monitoring Stack     │
+         │  ├─ Prometheus        │
+         │  ├─ Grafana           │
+         │  └─ Logs              │
+         └───────────────────────┘
+```
+
+### Component Breakdown
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Frontend** | Next.js 15, React 19 RC, TypeScript, Tailwind CSS 4.1 | User interface, real-time UI, code/text editors |
+| **Backend API** | Flask, SQLAlchemy, OpenAI SDK, Gunicorn | REST endpoints, LLM integration, business logic |
+| **Database** | PostgreSQL 16 (containerized) | User accounts, query history, persistent state |
+| **Container Registry** | Azure ACR (group6acr) | Stores Docker images for K8s |
+| **Orchestration** | Kubernetes (AKS) | Pod management, scaling, networking, secrets |
+| **Infrastructure** | Terraform (Azure modules) | Resource provisioning (AKS, RG, ACR, disks) |
+| **Deployment** | ArgoCD, GitHub Actions | GitOps sync, CI/CD automation |
+| **Monitoring** | Prometheus, Grafana, OpenTelemetry | Metrics, dashboards, APM |
+| **Secrets** | Kubernetes Secrets, Azure Key Vault | API keys, DB credentials |
 
 ---
 
 ## Technology Stack
-- **Languages:** Python 3.11, SQL, YAML, HCL (Terraform)
-- **Frameworks:** Flask, SQLAlchemy, Flask-Login
-- **Containerization:** Docker, docker-compose
-- **Orchestration:** Kubernetes (AKS)
-- **Infrastructure:** Terraform (Azure provider)
-- **CI/CD:** GitHub Actions
-- **Monitoring:** Prometheus, Grafana
-- **Cloud:** Azure (AKS, ACR, PostgreSQL, App Gateway, Key Vault)
-- **LLM Integration:** OpenAI API
+
+**Backend:**
+- Python 3.11, Flask, SQLAlchemy, Flask-Login
+- OpenAI API (gpt-4o-mini for recommendations)
+- Gunicorn (4 workers, 120s timeout)
+- psycopg2 (PostgreSQL driver)
+
+**Frontend:**
+- Node.js 18+, pnpm 9.12.3
+- Next.js 15 (app router, SSR, edge runtime ready)
+- React 19 RC, TypeScript (strict mode)
+- Tailwind CSS 4.1, PostCSS
+- CodeMirror 6, ProseMirror (editors)
+- Drizzle ORM (database queries)
+- NextAuth 5.0.0-beta (authentication)
+- Radix UI, shadcn/ui (components)
+- Playwright (E2E tests)
+
+**Infrastructure & Deployment:**
+- Docker (Python 3.11-slim, non-root user)
+- Kubernetes (AKS), Helm
+- Terraform 1.5+, Azure provider
+- ArgoCD (GitOps)
+- GitHub Actions (CI/CD)
+
+**Monitoring & Observability:**
+- Prometheus (metrics collection)
+- Grafana (dashboards)
+- OpenTelemetry (distributed tracing)
+- Structured logging (Gunicorn, K8s)
+
+**Cloud Platform:**
+- Azure AKS (Kubernetes cluster)
+- Azure ACR (container registry)
+- Azure PostgreSQL Flexible Server (managed DB)
+- Azure App Gateway (ingress controller)
+- Azure Key Vault (secrets storage)
 
 ---
 
-## Folder Structure
+## Project Structure
 
 ```
-proj_Devops/
-├── Flask_App.py                # Main Flask application
-├── requirements.txt            # Python dependencies
-├── Dockerfile                  # Container build instructions
-├── docker-compose.dev.yml      # Local dev multi-service setup
-├── static/                     # CSS/JS assets
-├── templates/                  # HTML templates
-├── k8s_solution/               # Kubernetes manifests
-│   ├── api-deploy.yml          # App deployment
-│   ├── db-deploy.yml           # DB deployment
-│   ├── ...                     # Ingress, secrets, HPA, services
-├── terraform/                  # Infrastructure-as-Code
-│   ├── main.tf                 # Root config
-│   ├── providers.tf            # Provider setup
-│   ├── variables.tf            # Input variables
-│   ├── modules/                # Modular resources (acr, aks, disk, resourcegroups)
-├── .github/workflows/          # CI/CD workflows
-│   └── deploy.yml              # Main pipeline
-```
+master_projectg6/
+├── README.md                         # This file
+├── LICENSE                           # MIT License
+├── Dockerfile                        # Python 3.11-slim, non-root user, 4 Gunicorn workers
+├── requirements.txt                  # Backend dependencies
+├── Flask_App.py                      # Main Flask application (846 lines)
+│
+├── frontend/                         # Next.js React frontend
+│   ├── package.json                  # pnpm workspace, v3.1.0
+│   ├── pnpm-lock.yaml                # Lock file
+│   ├── next.config.ts                # Next.js config (PPR, image remotePatterns)
+│   ├── tsconfig.json                 # TypeScript strict mode
+│   ├── tailwind.config.ts            # Tailwind CSS 4.1
+│   ├── postcss.config.mjs            # PostCSS setup
+│   ├── drizzle.config.ts             # Drizzle ORM config
+│   ├── playwright.config.ts          # E2E testing
+│   ├── biome.jsonc                   # Code formatter/linter
+│   ├── middleware.ts                 # Next.js middleware
+│   ├── instrumentation.ts            # OpenTelemetry setup
+│   ├── app/                          # App router (Next.js 13+)
+│   │   ├── layout.tsx                # Root layout
+│   │   ├── globals.css               # Global styles
+│   │   ├── (auth)/                   # Auth routes (login, register)
+│   │   ├── (chat)/                   # Chat routes
+│   │   └── (landing)/                # Landing page routes
+│   ├── components/                   # 40+ reusable React components
+│   │   ├── chat.tsx                  # Main chat component
+│   │   ├── artifact.tsx              # Artifact viewer
+│   │   ├── code-editor.tsx           # CodeMirror wrapper
+│   │   ├── image-editor.tsx          # Image editing
+│   │   ├── sheet-editor.tsx          # Spreadsheet editing
+│   │   ├── document.tsx              # Document rendering
+│   │   ├── message.tsx               # Message display
+│   │   ├── ui/                       # shadcn/ui components
+│   │   └── ...
+│   ├── artifacts/                    # Artifact action handlers
+│   │   ├── actions.ts                # Server actions
+│   │   ├── code/                     # Code artifact handlers
+│   │   ├── image/                    # Image handlers
+│   │   ├── sheet/                    # Sheet handlers
+│   │   └── text/                     # Text handlers
+│   ├── hooks/                        # Custom React hooks
+│   ├── lib/                          # Utilities, database setup, helpers
+│   ├── public/                       # Static assets
+│   ├── tests/                        # Playwright E2E tests
+│   └── README.md                     # Frontend-specific guide
+│
+├── static/                           # Flask static files
+│   ├── Jscrpt.js                     # Frontend logic (846 lines)
+│   ├── style.css                     # Main stylesheet
+│   ├── styles.css                    # Additional styles
+│   ├── C.css                         # Utility styles
+│   └── README.md                     # Static assets guide
+│
+├── templates/                        # Flask HTML templates
+│   ├── i.html                        # Main dashboard (163 lines)
+│   ├── login.html                    # Auth form
+│   ├── history.html                  # Query history
+│   ├── HM.html                       # Additional page
+│   └── README.md                     # Templates guide
+│
+├── k8s_solution/                     # Kubernetes manifests
+│   ├── namespace.yml                 # devops-advisor namespace
+│   ├── api-deploy.yml                # Flask app deployment (2 replicas)
+│   ├── api-svc.yml                   # ClusterIP service (internal)
+│   ├── api-svc-lb.yml                # LoadBalancer service (external)
+│   ├── api-hpa.yml                   # HPA (2-5 replicas, CPU 60%)
+│   ├── db-deploy.yml                 # PostgreSQL 16 deployment
+│   ├── db-svc.yml                    # PostgreSQL service
+│   ├── db-pvc.yml                    # Persistent volume (10Gi)
+│   ├── app-secret.sample.yml         # App secrets template
+│   ├── db-secret.sample.yml          # DB secrets template
+│   ├── app-ingress-agic.yml          # Azure App Gateway ingress
+│   ├── _api-deploy.acr.yml           # ACR-ready deployment
+│   └── README.md                     # K8s deployment guide
+│
+├── argo-apps/                        # ArgoCD application manifests
+│   ├── monitoring/                   # Monitoring apps
+│   │   ├── grafana-app.yaml          # Grafana ArgoCD app
+│   │   └── prometheus-app.yaml       # Prometheus ArgoCD app
+│   └── README.md                     # ArgoCD guide
+│
+├── terraform/                        # Infrastructure as Code
+│   ├── main.tf                       # Root config, module calls
+│   ├── providers.tf                  # Azure provider setup (>= 3.0.0)
+│   ├── variables.tf                  # Input variables
+│   ├── outputs.tf                    # Root outputs
+│   ├── modules/                      # Reusable Terraform modules
+│   │   ├── resourcegroups/           # Azure Resource Group
+│   │   ├── acr/                      # Azure Container Registry
+│   │   ├── aks/                      # Azure Kubernetes Service
+│   │   └── disk/                     # Managed disk provisioning
+│   └── README.md                     # Terraform usage guide
+│
+├── deploy-argocd.yml                 # ArgoCD deployment playbook
+├── deploy-monitoring.yml             # Monitoring stack deployment
+├── values-argocd.yaml                # ArgoCD Helm values
+├── values-prometheus.yaml            # Prometheus Helm values
+├── values-grafana.yaml               # Grafana Helm values
+└── argocd-apps.yaml                  # ArgoCD application manifest
+
+** Key Files Explained:**
+- `Flask_App.py` – 846 lines: Authentication, LLM endpoints (/best_practices_cost, /best_practices_performance, /structure, /terraform, /infra_cli), history tracking, export
+- `Jscrpt.js` – 846 lines: Toast notifications, form handling, API calls, real-time response streaming, export functionality
+- `i.html` – 163 lines: Main dashboard with provider selector, scale tier, loading pressure, form submission
 
 ---
 
 ## Setup & Installation
 
 ### Prerequisites
-- Docker & Docker Compose
-- Python 3.11+
-- Terraform 1.5+
-- Azure CLI
-- kubectl
-- Ansible (for ArgoCD/monitoring)
-- GitHub account with repository secrets configured
 
-### Local Development
-1. Clone the repository:
-   ```sh
-   git clone <repo-url>
-   cd proj_Devops
-   ```
-2. Create a `.env` file with required secrets (see sample in code):
-   - `OPENAI_API_KEY`
-   - `FLASK_SECRET_KEY`
-   - `DB_PASSWORD`
-3. Start services with Docker Compose:
-   ```sh
-   docker-compose -f docker-compose.dev.yml up --build
-   ```
-4. Access the app at `http://localhost:5002` (default port).
+**System Requirements:**
+- macOS, Linux, or Windows with WSL2
+- Docker & Docker Compose (for containerized development)
+- Python 3.11+ (for local development)
+- Node.js 18+ & pnpm 9.12+ (for frontend)
+- Terraform 1.5+ (for infrastructure provisioning)
+- Azure CLI & kubectl (for cloud deployment)
+- Git
+
+**API & Credentials:**
+- OpenAI API key (https://platform.openai.com/api-keys)
+- Azure Subscription & service principal (for Terraform)
+- GitHub repository with secrets configured
+
+### Local Development Setup
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/anas-443005129/master_projectg6.git
+cd master_projectg6
+git checkout frontend  # Switch to frontend branch
+```
+
+#### 2. Backend Setup (Flask)
+
+```bash
+# Create Python virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create .env file
+cat > .env <<EOF
+OPENAI_API_KEY=sk-your-key-here
+FLASK_SECRET_KEY=$(openssl rand -hex 16)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=your-secure-password
+DB_NAME=devops_advisor_db
+EOF
+
+# Start Flask development server
+python Flask_App.py
+# API running at http://localhost:5001
+```
+
+**Environment Variables:**
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `OPENAI_API_KEY` | OpenAI API key | sk-proj-... |
+| `FLASK_SECRET_KEY` | Session encryption | (auto-generated) |
+| `DB_HOST` | PostgreSQL hostname | localhost |
+| `DB_PORT` | PostgreSQL port | 5432 |
+| `DB_USER` | DB username | postgres |
+| `DB_PASSWORD` | DB password | secure-pass |
+| `DB_NAME` | Database name | devops_advisor_db |
+
+#### 3. Frontend Setup (Next.js)
+
+```bash
+cd frontend
+
+# Install dependencies (uses pnpm for faster installs)
+pnpm install
+
+# Create environment file
+cat > .env.local <<EOF
+NEXT_PUBLIC_API_URL=http://localhost:5001
+EOF
+
+# Run development server with Turbo
+pnpm dev
+# Frontend running at http://localhost:3000
+
+# Verify build
+pnpm build
+
+# Run linter/formatter
+pnpm lint
+pnpm format
+```
+
+#### 4. PostgreSQL Database
+
+**Option A: Docker Container**
+```bash
+docker run -d \
+  --name postgres-dev \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=your-secure-password \
+  -e POSTGRES_DB=devops_advisor_db \
+  -p 5432:5432 \
+  postgres:16-alpine
+```
+
+**Option B: Local Installation**
+```bash
+# On macOS with Homebrew
+brew install postgresql@16
+brew services start postgresql@16
+
+# Create database
+createdb devops_advisor_db
+```
+
+#### 5. Run Full Stack Locally
+
+```bash
+# Terminal 1: Backend
+cd master_projectg6
+source venv/bin/activate
+python Flask_App.py
+
+# Terminal 2: Frontend
+cd master_projectg6/frontend
+pnpm dev
+
+# Terminal 3: Database (if using Docker)
+docker run -d --name postgres-dev \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=your-password \
+  -e POSTGRES_DB=devops_advisor_db \
+  -p 5432:5432 \
+  postgres:16-alpine
+
+# Access:
+# - Frontend: http://localhost:3000
+# - Backend API: http://localhost:5001
+```
 
 ---
 
-## Configuration
+## Development Guide
 
-- **Environment Variables:**
-  - `OPENAI_API_KEY`: OpenAI API key for LLM queries
-  - `FLASK_SECRET_KEY`: Flask session secret
-  - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Database connection
-- **Kubernetes Secrets:**
-  - Managed via `app-secret.yml` and `db-secret.yml` manifests
-- **Terraform Variables:**
-  - Set in `terraform.tfvars` or via pipeline
+### Backend Development (Flask)
+
+**Key Endpoints:**
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/auth/register` | GET/POST | User registration |
+| `/auth/login` | GET/POST | User login |
+| `/auth/logout` | GET | User logout |
+| `/` | GET | Main dashboard (requires login) |
+| `/best_practices_cost` | POST | Cost optimization recommendations |
+| `/best_practices_performance` | POST | Performance optimization recommendations |
+| `/structure` | POST | AI-generated project structure |
+| `/terraform` | POST | Terraform module generation |
+| `/infra_cli` | POST | Infrastructure provisioning CLI script |
+| `/history` | GET | User's query history (JSON) |
+| `/history/export` | GET | Export history with optional filters |
+| `/init-db` | GET | Manual database initialization |
+
+**Making LLM Requests:**
+```bash
+curl -X POST http://localhost:5001/best_practices_cost \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "provider=Azure&description=Web+app+with+database&scale=Medium+%281k-100k%2Fday%29&loading_pressure=Everyday&country=Saudi+Arabia"
+```
+
+**Database Debugging:**
+```bash
+# Connect to database
+psql -U postgres -d devops_advisor_db
+
+# View tables
+\dt
+
+# Query user history
+SELECT * FROM histories WHERE user_id = 1 ORDER BY created_at DESC LIMIT 5;
+```
+
+### Frontend Development (Next.js)
+
+**Key Commands:**
+```bash
+# Start with Turbo for faster rebuilds
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Run production build locally
+pnpm start
+
+# Run type checking
+pnpm run tsc --noEmit
+
+# Format code with Biome
+pnpm format
+
+# Lint with Biome
+pnpm lint
+
+# Run E2E tests with Playwright
+pnpm test
+
+# Database operations
+pnpm db:generate   # Generate schema migrations
+pnpm db:migrate    # Run migrations
+pnpm db:studio     # Open Drizzle Studio
+pnpm db:push       # Push schema to database
+pnpm db:pull       # Pull schema from database
+```
+
+**File Organization:**
+- `app/` – Pages and layouts using app router
+- `components/` – Reusable React components
+- `artifacts/` – Artifact handlers (code, images, sheets, etc.)
+- `hooks/` – Custom React hooks
+- `lib/` – Utilities, database setup, API clients
+- `public/` – Static assets
+
+### Code Style & Quality
+
+**Backend:**
+- Black code formatting
+- Type hints with Python 3.11
+- SQLAlchemy async-ready models
+- Docstrings for functions/classes
+
+**Frontend:**
+- Biome code formatter and linter
+- TypeScript strict mode
+- ESLint for code quality
+- Playwright for E2E tests
 
 ---
 
-## Development Workflow
+## API Endpoints
 
-- **Python:**
-  - Edit `Flask_App.py` and templates
-  - Install dependencies: `pip install -r requirements.txt`
-- **Containerization:**
-  - Build image: `docker build -t devops-advisor:latest .`
-  - Run locally: `docker run -p 5001:5001 --env-file .env devops-advisor:latest`
-- **Database:**
-  - PostgreSQL runs as a container, persistent volume via Docker/K8s
-- **Testing:**
-  - Add unit/integration tests in a `tests/` folder (not included by default)
+### Authentication
+
+**POST /auth/register**
+```json
+{
+  "email": "user@example.com",
+  "password": "secure-password"
+}
+```
+Response: Redirect to login
+
+**POST /auth/login**
+```json
+{
+  "email": "user@example.com",
+  "password": "secure-password"
+}
+```
+Response: Redirect to dashboard
+
+**GET /auth/logout**
+Response: Redirect to login
+
+### LLM Recommendations
+
+**POST /best_practices_cost**
+
+Parameters:
+- `provider` (string): AWS, Azure, Google Cloud
+- `description` (string): Project description
+- `scale` (string): Small/Medium/Large
+- `loading_pressure` (string): Everyday/3-5 days/No pressure
+- `country` (string, optional): User's country
+
+Response:
+```json
+{
+  "cost": "Detailed cost optimization recommendations in SAR..."
+}
+```
+
+**POST /best_practices_performance**
+
+Same parameters as cost endpoint.
+
+Response:
+```json
+{
+  "performance": "Performance optimization strategies..."
+}
+```
+
+**POST /structure**
+
+Generates AI-inferred project structure based on description.
+
+Response:
+```json
+{
+  "structure": "project-root/\n├── frontend/\n├── backend/\n├── terraform/\n..."
+}
+```
+
+**POST /terraform**
+
+Generates complete Terraform modules.
+
+Response:
+```json
+{
+  "terraform": "### FILE: main.tf\n...\n### FILE: modules/..."
+}
+```
+
+**POST /infra_cli**
+
+Generates provisioning script (Bash/PowerShell).
+
+Response:
+```json
+{
+  "cli": "#!/usr/bin/env bash\nset -uo pipefail\n..."
+}
+```
+
+### History & Export
+
+**GET /history**
+
+Returns user's query history (max 50).
+
+Response:
+```json
+{
+  "history": [
+    {
+      "id": 1,
+      "type": "cost",
+      "created_at": "2025-11-25T10:30:00Z",
+      "provider": "Azure",
+      "scale": "Medium",
+      "country": "Saudi Arabia",
+      "prompt": "Web app description",
+      "result": "Cost recommendations..."
+    }
+  ]
+}
+```
+
+**GET /history/export?type=cost&q=azure**
+
+Exports history as downloadable JSON with optional filters.
+
+Parameters:
+- `type` (optional): cost|performance|structure|terraform|cli|all
+- `q` (optional): Full-text search in prompt/result
+- `include_raw` (optional): 1 to include raw markdown
 
 ---
 
-## Infrastructure Provisioning
+## Database Schema
 
-- **Terraform:**
-  - Modular structure for resource groups, AKS, ACR, disks
-  - Example usage:
-    ```sh
-    cd terraform
-    terraform init
-    terraform apply -var="ARM_SUBSCRIPTION_ID=<id>" ...
-    ```
-  - Variables for location, prefix, environment, disk size, etc.
-- **Modules:**
-  - `resourcegroups`, `acr`, `aks`, `disk` (extendable)
+### Users Table
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
----
-
-## CI/CD Pipeline
-
-- **GitHub Actions:**
-  - Multi-job workflow: infra provisioning, image build/push, platform config, exposure
-  - Secrets required: `AZURE_CREDENTIALS`, `OPENAI_API_KEY`, `FLASK_SECRET_KEY`, `POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`
-  - Automated steps:
-    - Provision infra with Terraform
-    - Build/push Docker image to ACR
-    - Configure AKS, ArgoCD, monitoring
-    - Deploy manifests via ArgoCD
-    - Expose app via AGIC (App Gateway Ingress Controller)
-    - Enable HPA (Horizontal Pod Autoscaler)
-    - Self-signed SSL for HTTPS
+### History Table
+```sql
+CREATE TABLE histories (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  item_type VARCHAR(32),           -- cost, performance, structure, terraform, cli
+  provider VARCHAR(64),            -- AWS, Azure, Google Cloud
+  scale VARCHAR(64),               -- Small, Medium, Large
+  loading VARCHAR(64),             -- Everyday, 3-5 days, No pressure
+  country VARCHAR(128),            -- User's country/region
+  prompt_text TEXT NOT NULL,       -- User's project description
+  result_text TEXT NOT NULL,       -- LLM recommendation output
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ---
 
-## Kubernetes Deployment
+## Deployment
 
-- **Manifests:**
-  - App and DB deployments, services, secrets, ingress, HPA
-  - Namespace isolation (`devops-advisor`)
-  - Readiness/liveness probes for health
-  - Resource requests/limits for scaling
-- **Operational Steps:**
-  - Connect to AKS
-  - Apply manifests in order (namespace, secrets, DB, app)
-  - Monitor rollout and external IP assignment
+### Docker Image
+
+**Build:**
+```bash
+docker build -t devops-advisor:latest .
+```
+
+**Run:**
+```bash
+docker run -d \
+  --name devops-advisor \
+  -p 5001:5001 \
+  -e OPENAI_API_KEY=sk-... \
+  -e FLASK_SECRET_KEY=... \
+  -e DB_HOST=postgres \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=... \
+  -e DB_NAME=devops_advisor_db \
+  --link postgres-db:postgres \
+  devops-advisor:latest
+```
+
+### Push to Azure ACR
+
+```bash
+# Login to ACR
+az acr login --name group6acr
+
+# Tag image
+docker tag devops-advisor:latest group6acr.azurecr.io/devops-advisor:latest
+
+# Push
+docker push group6acr.azurecr.io/devops-advisor:latest
+```
+
+### Terraform Infrastructure Provisioning
+
+```bash
+cd terraform
+
+# Initialize Terraform
+terraform init
+
+# Plan infrastructure
+terraform plan \
+  -var="ARM_SUBSCRIPTION_ID=<your-subscription-id>" \
+  -out=tfplan
+
+# Apply infrastructure
+terraform apply tfplan
+
+# View outputs
+terraform output
+```
+
+### Kubernetes Deployment
+
+**Prerequisites:**
+- AKS cluster running
+- kubectl configured
+- ACR integrated with AKS
+
+**Deployment Steps:**
+
+```bash
+# 1. Connect to AKS
+az aks get-credentials \
+  --resource-group rg-devops-group6 \
+  --name devopsa-aks \
+  --overwrite-existing
+
+# 2. Apply namespace and secrets
+kubectl apply -f k8s_solution/namespace.yml
+kubectl apply -f k8s_solution/app-secret.yml
+kubectl apply -f k8s_solution/db-secret.yml
+
+# 3. Deploy PostgreSQL
+kubectl apply -f k8s_solution/db-pvc.yml
+kubectl apply -f k8s_solution/db-deploy.yml
+kubectl apply -f k8s_solution/db-svc.yml
+
+# Wait for PostgreSQL to be ready
+kubectl wait --namespace devops-advisor \
+  --for=condition=ready pod -l app=postgres \
+  --timeout=180s
+
+# 4. Deploy application
+kubectl apply -f k8s_solution/api-deploy.yml
+kubectl apply -f k8s_solution/api-svc-lb.yml
+kubectl apply -f k8s_solution/api-hpa.yml
+
+# 5. Setup ingress (App Gateway)
+kubectl apply -f k8s_solution/app-ingress-agic.yml
+
+# 6. Monitor rollout
+kubectl rollout status deployment devops-advisor-app -n devops-advisor
+
+# 7. Get external IP (wait a few minutes)
+kubectl get svc devops-advisor-lb -n devops-advisor -w
+
+# 8. View pods and services
+kubectl get pods -n devops-advisor
+kubectl get svc -n devops-advisor
+kubectl get ingress -n devops-advisor
+```
+
+**Verify Deployment:**
+```bash
+# Check pod logs
+kubectl logs -f deployment/devops-advisor-app -n devops-advisor
+
+# Check database connection
+kubectl exec -it deployment/postgres-db -n devops-advisor -- pg_isready
+
+# Test API health
+kubectl port-forward svc/devops-advisor-lb 5001:80 -n devops-advisor
+curl http://localhost:5001/
+```
+
+### ArgoCD GitOps Deployment
+
+```bash
+# Deploy ArgoCD
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Create application (points to this repo)
+kubectl apply -f argocd-apps.yaml
+
+# Check sync status
+argocd app get devops-advisor-app
+argocd app sync devops-advisor-app
+
+# Access ArgoCD UI
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# Open https://localhost:8080
+```
 
 ---
 
-## Monitoring & Observability
+## Monitoring
 
-- **Prometheus & Grafana:**
-  - Deployed via Helm/Ansible
-  - Grafana admin credentials managed via Kubernetes secret
-  - Access dashboards via exposed service
-- **Healthchecks:**
-  - Dockerfile and K8s probes for app health
-- **Logging:**
-  - Application logs via gunicorn and Kubernetes
+### Prometheus & Grafana
+
+**Deploy Prometheus & Grafana:**
+```bash
+# Add Prometheus Helm repo
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# Install Prometheus
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  -f values-prometheus.yaml \
+  -n monitoring --create-namespace
+
+# Install Grafana separately (if needed)
+helm install grafana grafana/grafana \
+  -f values-grafana.yaml \
+  -n monitoring
+
+# Access Grafana
+kubectl port-forward svc/grafana 3000:80 -n monitoring
+# Open http://localhost:3000 (default: admin/admin)
+```
+
+### Application Monitoring
+
+**Key Metrics:**
+- Pod CPU/Memory usage
+- Request latency and throughput
+- Database connection pool usage
+- OpenAI API call latency
+- Error rates by endpoint
+
+**Health Check Endpoints:**
+```bash
+# Frontend health
+curl http://localhost:3000/health
+
+# Backend health
+curl http://localhost:5001/
+
+# Prometheus metrics (if exposed)
+curl http://localhost:9090/api/v1/query?query=up
+```
+
+### OpenTelemetry Integration
+
+**Frontend Instrumentation:**
+- Configured in `frontend/instrumentation.ts`
+- Automatic tracing for React components, API calls
+- Export to Vercel OTEL collector or self-hosted
+
+**Backend Instrumentation:**
+- Gunicorn access/error logs
+- Structured logging for LLM calls
+- Database query performance
 
 ---
 
 ## Security
 
-- **Secrets Management:**
-  - All sensitive values stored in Kubernetes secrets
-  - Optionally integrate with Azure Key Vault
-- **User Authentication:**
-  - Passwords hashed, sessions managed via Flask-Login
-- **Network Security:**
-  - HTTPS enforced via App Gateway
-  - Private endpoints for DB/storage (extendable)
-- **RBAC:**
-  - AKS and ACR integration via managed identities
+### Secrets Management
 
----
+**Kubernetes Secrets:**
+```bash
+# View secrets
+kubectl get secrets -n devops-advisor
 
-## Usage
+# Create secret from file
+kubectl create secret generic app-secret \
+  --from-literal=OPENAI_API_KEY=sk-... \
+  --from-literal=FLASK_SECRET_KEY=... \
+  -n devops-advisor
 
-- Register/login to access LLM-powered cost and performance recommendations
-- Select cloud provider, scale, and workload details
-- View history of queries and responses
-- Export history as JSON
-- Monitor app and DB health via Grafana
+# Update secret
+kubectl patch secret app-secret -n devops-advisor -p \
+  '{"data":{"OPENAI_API_KEY":"'$(echo -n 'sk-new-key' | base64)}'"}' 
+```
+
+**Azure Key Vault Integration (Optional):**
+```bash
+# Enable Key Vault secret driver on AKS
+az aks addon enable --addons azure-keyvault-secrets-provider \
+  --name devopsa-aks \
+  --resource-group rg-devops-group6
+
+# Deploy SecretProviderClass
+kubectl apply -f - <<EOF
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-keyvault
+  namespace: devops-advisor
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "true"
+    keyvaultName: "devops-advisor-kv"
+    objects: |
+      array:
+        - |
+          objectName: "OPENAI-API-KEY"
+          objectType: secret
+        - |
+          objectName: "FLASK-SECRET-KEY"
+          objectType: secret
+EOF
+```
+
+### Authentication & Authorization
+
+**Backend Security:**
+- Passwords hashed with Werkzeug (PBKDF2)
+- Flask-Login session management
+- CSRF protection via Flask
+- SQL injection prevention via SQLAlchemy ORM
+
+**Frontend Security:**
+- NextAuth for session management
+- HTTPS-only cookies
+- XSS protection via React's built-in escaping
+- CORS configured for backend domain
+
+**Network Security:**
+- Azure App Gateway HTTPS enforcement
+- TLS 1.2+ only
+- WAF (Web Application Firewall) rules
+- Network Policies for K8s pod-to-pod communication
+
+### Best Practices
+
+✅ **Implemented:**
+- Non-root user in Docker container (appuser)
+- Resource limits on K8s pods (requests/limits)
+- Health checks (readiness/liveness probes)
+- Secrets in environment (never in code)
+- Managed identity for AKS → ACR pull
+
+⚠️ **Recommended Additions:**
+- Enable audit logging on AKS
+- Configure Network Policies for pod isolation
+- Implement rate limiting on API endpoints
+- Add request signing for sensitive endpoints
+- Use managed identities for all cloud resources
+- Enable encryption at rest for PostgreSQL
+- Rotate secrets regularly (automation via GitOps)
 
 ---
 
 ## Troubleshooting
 
-- **App Fails to Start:**
-  - Check `.env` for required variables
-  - Ensure DB container is healthy
-- **Kubernetes Issues:**
-  - Validate secrets and manifests
-  - Check pod logs and rollout status
-- **Terraform Errors:**
-  - Confirm provider credentials and variable values
-- **CI/CD Failures:**
-  - Review workflow logs for failed steps
+### Backend Issues
+
+**Flask app won't start:**
+```bash
+# Check environment variables
+env | grep OPENAI_API_KEY
+
+# Check Python version
+python --version
+
+# Verify database connection
+psql -U postgres -d devops_advisor_db -c "SELECT 1"
+
+# Check Flask logs
+python Flask_App.py 2>&1 | tail -50
+```
+
+**Database connection timeout:**
+```bash
+# Verify PostgreSQL is running
+docker ps | grep postgres
+
+# Check PostgreSQL logs
+docker logs postgres-dev
+
+# Test connection
+psql -h localhost -U postgres -c "SELECT 1"
+```
+
+**OpenAI API errors:**
+```bash
+# Verify API key
+echo $OPENAI_API_KEY
+
+# Test OpenAI connectivity
+curl https://api.openai.com/v1/models \
+  -H "Authorization: Bearer $OPENAI_API_KEY"
+```
+
+### Frontend Issues
+
+**Next.js build fails:**
+```bash
+# Clear build cache
+rm -rf .next
+
+# Rebuild
+pnpm build
+
+# Check TypeScript
+pnpm run tsc --noEmit
+```
+
+**Tailwind CSS not loading:**
+```bash
+# Verify Tailwind config
+cat tailwind.config.ts
+
+# Rebuild CSS
+pnpm build
+
+# Clear browser cache
+# Ctrl+Shift+R (or Cmd+Shift+R on Mac)
+```
+
+### Kubernetes Issues
+
+**Pod won't start:**
+```bash
+# Check pod status
+kubectl describe pod <pod-name> -n devops-advisor
+
+# View pod logs
+kubectl logs <pod-name> -n devops-advisor
+
+# Check events
+kubectl get events -n devops-advisor
+```
+
+**Database pod stuck pending:**
+```bash
+# Check PVC status
+kubectl get pvc -n devops-advisor
+
+# Check PV availability
+kubectl get pv
+
+# Describe PVC for details
+kubectl describe pvc postgres-pvc -n devops-advisor
+```
+
+**App can't connect to database:**
+```bash
+# Verify DB service
+kubectl get svc postgres-db -n devops-advisor
+
+# Test DNS resolution
+kubectl run -it --rm debug --image=alpine --restart=Never -- \
+  sh -c 'apk add curl && curl http://postgres-db:5432'
+
+# Check database pod is ready
+kubectl get pod -l app=postgres -n devops-advisor
+```
+
+**LoadBalancer stuck on "pending":**
+```bash
+# Check service events
+kubectl describe svc devops-advisor-lb -n devops-advisor
+
+# On Azure, verify Load Balancer resource
+az network lb list --resource-group MC_rg-devops-group6_devopsa-aks_southafricanorth
+
+# Wait a few minutes (Azure LB provisioning can take time)
+kubectl get svc devops-advisor-lb -n devops-advisor -w
+```
+
+### Terraform Issues
+
+**Provider authentication failed:**
+```bash
+# Verify Azure CLI login
+az account show
+
+# Set subscription
+az account set --subscription <subscription-id>
+
+# Verify Terraform backend
+terraform init -upgrade
+
+# Check provider logs
+TF_LOG=DEBUG terraform plan
+```
+
+**Resource conflicts:**
+```bash
+# List existing resources
+az resource list --resource-group rg-devops-group6
+
+# Remove conflicting resource
+az resource delete --ids /subscriptions/...
+
+# Try apply again
+terraform apply
+```
+
+### Container Registry Issues
+
+**ACR authentication failed:**
+```bash
+# Login to ACR
+az acr login --name group6acr
+
+# Verify credentials
+cat ~/.docker/config.json
+
+# On AKS, verify ACR integration
+az aks show --resource-group rg-devops-group6 --name devopsa-aks \
+  --query "acrProfile"
+```
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please follow these guidelines:
-- Fork the repository and create a feature branch
-- Write clear, descriptive commit messages
-- Add/extend tests for new features
-- Submit a pull request with detailed description
+We welcome contributions! Please follow these guidelines:
+
+1. **Fork the repository** and create a feature branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Write clear, descriptive commits:**
+   ```bash
+   git commit -m "feat(backend): add cost optimization for SAR pricing"
+   ```
+
+3. **Follow code style:**
+   - Backend: Black formatter, type hints
+   - Frontend: Biome formatter/linter
+   - Test your changes locally
+
+4. **Add tests** for new features:
+   - Backend: Unit tests with pytest (if added)
+   - Frontend: E2E tests with Playwright
+
+5. **Submit a pull request** with:
+   - Clear description of changes
+   - Screenshots/videos if UI changes
+   - Testing steps
+   - Reference to related issues
+
+6. **Review process:**
+   - Code review by maintainers
+   - Automated CI/CD checks
+   - Merge after approval
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+This project is licensed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
 
 ---
 
 ## Acknowledgements
-- OpenAI for LLM API
-- Azure for cloud infrastructure
-- Prometheus & Grafana for monitoring
-- All open-source contributors
 
-## Subproject READMEs
-Short READMEs have been added to the main subfolders to help developers get started quickly:
+- **OpenAI** – GPT-4o-mini LLM for intelligent recommendations
+- **Microsoft Azure** – AKS, ACR, and infrastructure services
+- **Vercel** – Next.js framework and deployment platform
+- **Prometheus & Grafana** – Monitoring and observability
+- **ArgoCD** – GitOps continuous deployment
+- **Hashicorp Terraform** – Infrastructure as Code
+- **All open-source contributors** – Flask, SQLAlchemy, PostgreSQL, Kubernetes, and more
 
-- `frontend/` - Next.js frontend (setup, dev, build commands)
-- `k8s_solution/` - Kubernetes manifests and apply order
-- `argo-apps/` - ArgoCD application manifests and notes
-- `terraform/` - Terraform usage and module overview
-- `static/` - Static assets and quick preview steps
-- `templates/` - Flask HTML templates usage
+---
 
-See the corresponding `README.md` in each folder for concise setup and run instructions.
+## Support & Resources
+
+**Documentation:**
+- [Flask Documentation](https://flask.palletsprojects.com/)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Terraform Documentation](https://www.terraform.io/docs/)
+- [Azure Documentation](https://docs.microsoft.com/en-us/azure/)
+- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+
+**Community:**
+- GitHub Issues: Report bugs and feature requests
+- GitHub Discussions: Ask questions and share ideas
+- Pull Requests: Submit improvements
+
+**Getting Help:**
+- Review the [Troubleshooting](#troubleshooting) section
+- Check existing GitHub issues
+- Read endpoint documentation in [API Endpoints](#api-endpoints)
+- Examine the subproject READMEs for detailed guides
+
+---
+
+## Project Status
+
+✅ **Production Ready**
+- Full-stack application with all core features
+- Containerized and orchestrated on Kubernetes
+- Infrastructure-as-Code with Terraform
+- CI/CD automation with GitHub Actions and ArgoCD
+- Monitoring and observability in place
+
+🚀 **Future Enhancements**
+- Async task queues for long-running LLM calls
+- Advanced caching layer (Redis)
+- Multi-language support for UI
+- Mobile app (React Native)
+- Enhanced analytics and reporting
+- Community marketplace for custom advisors
+
+---
+
+## Contact
+
+For questions, suggestions, or inquiries:
+- **GitHub**: [@anas-443005129](https://github.com/anas-443005129)
+- **Issues**: [GitHub Issues](https://github.com/anas-443005129/master_projectg6/issues)
+
+---
+
+**Last Updated:** November 25, 2025  
+**Version:** 3.1.0  
+**Maintained By:** DevOps Team
