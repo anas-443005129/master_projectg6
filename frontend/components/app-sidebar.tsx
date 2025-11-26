@@ -81,7 +81,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     width={48}
                   />
                 </div>
-                <span className="text-gradient">InfraTech</span>
+                <span className="text-gradient">Infrarock</span>
               </Link>
               <div className="flex flex-row gap-1">
                 {user && (

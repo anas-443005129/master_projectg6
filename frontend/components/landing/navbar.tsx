@@ -31,7 +31,7 @@ export function LandingNavbar() {
               width={56}
             />
           </div>
-          <span className="text-gradient">InfraTech</span>
+          <span className="text-gradient">Infrarock</span>
         </Link>
 
         {/* Desktop Navigation */}

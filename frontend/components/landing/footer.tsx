@@ -58,14 +58,14 @@ export function LandingFooter() {
             >
               <div className="flex w-14 items-center justify-center overflow-hidden">
                 <Image
-                  alt="InfraTech logo"
+                  alt="Infrarock logo"
                   className="h-full w-full object-cover"
                   height={56}
                   src="/images/logo.svg"
                   width={56}
                 />
               </div>
-              <span className="text-gradient">InfraTech</span>
+              <span className="text-gradient">Infrarock</span>
             </Link>
             <p className="mb-6 max-w-xs text-muted-foreground text-sm">
               AI-powered DevOps automation that helps teams ship faster with
@@ -128,7 +128,7 @@ export function LandingFooter() {
         {/* Bottom Bar */}
         <div className="flex flex-col items-center justify-between gap-4 border-primary/20 border-t pt-8 md:flex-row">
           <p className="text-center text-muted-foreground text-sm md:text-left">
-            © 2025 InfraTech. All rights reserved.
+            © 2025 Infrarock. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link
