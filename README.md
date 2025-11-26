@@ -3,15 +3,17 @@
 ## Overview
 
 **LLM DevOps Advisor** is a full-stack, production-grade SaaS platform that uses AI to provide intelligent DevOps guidance. It combines:
-- **Flask backend** (Python 3.11) with OpenAI API integration for LLM-powered recommendations
 - **Modern Next.js frontend** (React 19 RC, TypeScript, Tailwind CSS 4.1) with rich editors and real-time UI
-- **PostgreSQL database** with SQLAlchemy ORM and Drizzle ORM (for frontend)
+- **Server-side AI workflows** implemented via Next.js App Router (legacy Flask API retired)
+- **PostgreSQL database** with Drizzle ORM migrations
 - **Kubernetes orchestration** (Azure AKS) with auto-scaling, persistent storage, and secrets management
 - **Infrastructure-as-Code** (Terraform) for reproducible Azure resource provisioning
 - **GitOps deployment** via ArgoCD with automated CI/CD (GitHub Actions)
 - **Monitoring & observability** (Prometheus, Grafana, OpenTelemetry)
 
 The platform intelligently generates **cost optimization**, **performance recommendations**, **project structures**, **Terraform code**, and **infrastructure provisioning scripts** tailored to cloud providers (AWS, Azure, GCP) and regional constraints.
+
+> ℹ️ **Legacy notice:** the original Flask API, templates, and static assets were removed in favor of a single Next.js deployment. Historical references remain below until the documentation rewrite is complete.
 
 ---
 
@@ -38,21 +40,6 @@ The platform intelligently generates **cost optimization**, **performance recomm
 
 ## Quick Start
 
-### Backend (Flask API)
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variables
-export OPENAI_API_KEY=sk-your-key-here
-export FLASK_SECRET_KEY=your-secret-key
-export DB_HOST=localhost DB_PORT=5432 DB_USER=postgres DB_PASSWORD=yourpass DB_NAME=devops_advisor_db
-
-# Start Flask development server
-python Flask_App.py
-# Access at http://localhost:5001
-```
-
 ### Frontend (Next.js)
 ```bash
 cd frontend
@@ -69,18 +56,13 @@ pnpm build
 pnpm start
 ```
 
-### Docker (Full Stack Local)
+### Docker (Next.js standalone)
 ```bash
-# Build Flask image
-docker build -t devops-advisor:latest .
-
-# Run with environment variables
-docker run -p 5001:5001 \
-  -e OPENAI_API_KEY=sk-your-key \
-  -e FLASK_SECRET_KEY=your-secret \
-  -e DB_HOST=postgres DB_PORT=5432 \
-  -e DB_USER=postgres DB_PASSWORD=yourpass \
-  devops-advisor:latest
+cd frontend
+docker build -t devops-advisor-next:latest .
+docker run --rm -p 3000:3000 \
+  --env-file .env.local \
+  devops-advisor-next:latest
 ```
 
 ### Kubernetes (Production)
@@ -90,18 +72,17 @@ az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks
 
 # Apply manifests in order
 kubectl apply -f k8s_solution/namespace.yml
-kubectl apply -f k8s_solution/db-secret.yml
-kubectl apply -f k8s_solution/app-secret.yml
-kubectl apply -f k8s_solution/db-pvc.yml
-kubectl apply -f k8s_solution/db-deploy.yml
-kubectl apply -f k8s_solution/db-svc.yml
-kubectl apply -f k8s_solution/api-deploy.yml
-kubectl apply -f k8s_solution/api-svc-lb.yml
-kubectl apply -f k8s_solution/api-hpa.yml
+kubectl apply -f k8s_solution/db/secret.yaml
+kubectl apply -f k8s_solution/redis/secret.yaml
+kubectl apply -f k8s_solution/frontend-app/secret.yaml
+kubectl apply -k k8s_solution/db
+kubectl apply -k k8s_solution/redis
+kubectl apply -f k8s_solution/cert-manager-issuer.yaml   # optional but recommended
+kubectl apply -k k8s_solution/frontend-app
 
 # Check status
 kubectl get pods -n devops-advisor
-kubectl get svc -n devops-advisor -w  # Watch for external IP
+kubectl get svc -A -w  # Watch for external IP/ingress
 ```
 
 ---
@@ -263,33 +244,28 @@ master_projectg6/
 │   ├── tests/                        # Playwright E2E tests
 │   └── README.md                     # Frontend-specific guide
 │
-├── static/                           # Flask static files
-│   ├── Jscrpt.js                     # Frontend logic (846 lines)
-│   ├── style.css                     # Main stylesheet
-│   ├── styles.css                    # Additional styles
-│   ├── C.css                         # Utility styles
-│   └── README.md                     # Static assets guide
-│
-├── templates/                        # Flask HTML templates
-│   ├── i.html                        # Main dashboard (163 lines)
-│   ├── login.html                    # Auth form
-│   ├── history.html                  # Query history
-│   ├── HM.html                       # Additional page
-│   └── README.md                     # Templates guide
-│
 ├── k8s_solution/                     # Kubernetes manifests
 │   ├── namespace.yml                 # devops-advisor namespace
-│   ├── api-deploy.yml                # Flask app deployment (2 replicas)
-│   ├── api-svc.yml                   # ClusterIP service (internal)
-│   ├── api-svc-lb.yml                # LoadBalancer service (external)
-│   ├── api-hpa.yml                   # HPA (2-5 replicas, CPU 60%)
-│   ├── db-deploy.yml                 # PostgreSQL 16 deployment
-│   ├── db-svc.yml                    # PostgreSQL service
-│   ├── db-pvc.yml                    # Persistent volume (10Gi)
-│   ├── app-secret.sample.yml         # App secrets template
-│   ├── db-secret.sample.yml          # DB secrets template
-│   ├── app-ingress-agic.yml          # Azure App Gateway ingress
-│   ├── _api-deploy.acr.yml           # ACR-ready deployment
+│   ├── cert-manager-issuer.yaml      # ClusterIssuers for TLS
+│   ├── app-ingress-agic.yml          # Azure App Gateway ingress (optional)
+│   ├── db/                           # PostgreSQL manifests
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── pvc.yaml
+│   │   ├── secret.sample.yaml
+│   │   └── kustomization.yaml
+│   ├── redis/                        # Redis manifests
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── pvc.yaml
+│   │   ├── secret.sample.yaml
+│   │   └── kustomization.yaml
+│   ├── frontend-app/                 # Next.js deployment manifests
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── ingress.yaml
+│   │   ├── secret.sample.yaml
+│   │   └── kustomization.yaml
 │   └── README.md                     # K8s deployment guide
 │
 ├── argo-apps/                        # ArgoCD application manifests
@@ -317,10 +293,7 @@ master_projectg6/
 ├── values-grafana.yaml               # Grafana Helm values
 └── argocd-apps.yaml                  # ArgoCD application manifest
 
-** Key Files Explained:**
-- `Flask_App.py` – 846 lines: Authentication, LLM endpoints (/best_practices_cost, /best_practices_performance, /structure, /terraform, /infra_cli), history tracking, export
-- `Jscrpt.js` – 846 lines: Toast notifications, form handling, API calls, real-time response streaming, export functionality
-- `i.html` – 163 lines: Main dashboard with provider selector, scale tier, loading pressure, form submission
+**Key Next.js Assets:** most production logic now lives under `frontend/` (App Router routes, `components/`, `artifacts/`, and server actions). See `frontend/README.md` for the full breakdown.
 
 ---
 
@@ -351,44 +324,7 @@ cd master_projectg6
 git checkout frontend  # Switch to frontend branch
 ```
 
-#### 2. Backend Setup (Flask)
-
-```bash
-# Create Python virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create .env file
-cat > .env <<EOF
-OPENAI_API_KEY=sk-your-key-here
-FLASK_SECRET_KEY=$(openssl rand -hex 16)
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your-secure-password
-DB_NAME=devops_advisor_db
-EOF
-
-# Start Flask development server
-python Flask_App.py
-# API running at http://localhost:5001
-```
-
-**Environment Variables:**
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | sk-proj-... |
-| `FLASK_SECRET_KEY` | Session encryption | (auto-generated) |
-| `DB_HOST` | PostgreSQL hostname | localhost |
-| `DB_PORT` | PostgreSQL port | 5432 |
-| `DB_USER` | DB username | postgres |
-| `DB_PASSWORD` | DB password | secure-pass |
-| `DB_NAME` | Database name | devops_advisor_db |
-
-#### 3. Frontend Setup (Next.js)
+#### 2. Frontend Setup (Next.js)
 
 ```bash
 cd frontend
@@ -397,9 +333,7 @@ cd frontend
 pnpm install
 
 # Create environment file
-cat > .env.local <<EOF
-NEXT_PUBLIC_API_URL=http://localhost:5001
-EOF
+cp .env.example .env.local  # update POSTGRES_URL/REDIS_URL/etc.
 
 # Run development server with Turbo
 pnpm dev
@@ -413,7 +347,7 @@ pnpm lint
 pnpm format
 ```
 
-#### 4. PostgreSQL Database
+#### 3. PostgreSQL Database
 
 **Option A: Docker Container**
 ```bash
@@ -436,19 +370,14 @@ brew services start postgresql@16
 createdb devops_advisor_db
 ```
 
-#### 5. Run Full Stack Locally
+#### 4. Run Locally
 
 ```bash
-# Terminal 1: Backend
-cd master_projectg6
-source venv/bin/activate
-python Flask_App.py
-
-# Terminal 2: Frontend
+# Terminal 1: Frontend
 cd master_projectg6/frontend
 pnpm dev
 
-# Terminal 3: Database (if using Docker)
+# Terminal 2: Database (if using Docker)
 docker run -d --name postgres-dev \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=your-password \
@@ -456,14 +385,21 @@ docker run -d --name postgres-dev \
   -p 5432:5432 \
   postgres:16-alpine
 
+# Terminal 3: Redis (optional but recommended)
+docker run -d --name redis-dev \
+  -e REDIS_PASSWORD=change-me \
+  -p 6379:6379 \
+  redis:7-alpine --requirepass change-me
+
 # Access:
 # - Frontend: http://localhost:3000
-# - Backend API: http://localhost:5001
 ```
 
 ---
 
 ## Development Guide
+
+> Legacy notice: The remaining content in this section refers to the retired Flask backend and is preserved only for historical context.
 
 ### Backend Development (Flask)
 
@@ -560,6 +496,8 @@ pnpm db:pull       # Pull schema from database
 ---
 
 ## API Endpoints
+
+> Legacy notice: These endpoints belonged to the deprecated Flask API. The Next.js implementation exposes equivalent functionality via server actions and Route Handlers.
 
 ### Authentication
 
@@ -717,23 +655,15 @@ CREATE TABLE histories (
 
 **Build:**
 ```bash
-docker build -t devops-advisor:latest .
+cd frontend
+docker build -t devops-advisor-next:latest .
 ```
 
 **Run:**
 ```bash
-docker run -d \
-  --name devops-advisor \
-  -p 5001:5001 \
-  -e OPENAI_API_KEY=sk-... \
-  -e FLASK_SECRET_KEY=... \
-  -e DB_HOST=postgres \
-  -e DB_PORT=5432 \
-  -e DB_USER=postgres \
-  -e DB_PASSWORD=... \
-  -e DB_NAME=devops_advisor_db \
-  --link postgres-db:postgres \
-  devops-advisor:latest
+docker run --rm -p 3000:3000 \
+  --env-file .env.local \
+  devops-advisor-next:latest
 ```
 
 ### Push to Azure ACR
@@ -743,10 +673,10 @@ docker run -d \
 az acr login --name group6acr
 
 # Tag image
-docker tag devops-advisor:latest group6acr.azurecr.io/devops-advisor:latest
+docker tag devops-advisor-next:latest group6acr.azurecr.io/devops-advisor-next:latest
 
 # Push
-docker push group6acr.azurecr.io/devops-advisor:latest
+docker push group6acr.azurecr.io/devops-advisor-next:latest
 ```
 
 ### Terraform Infrastructure Provisioning
@@ -787,50 +717,50 @@ az aks get-credentials \
 
 # 2. Apply namespace and secrets
 kubectl apply -f k8s_solution/namespace.yml
-kubectl apply -f k8s_solution/app-secret.yml
-kubectl apply -f k8s_solution/db-secret.yml
+kubectl apply -f k8s_solution/db/secret.yaml
+kubectl apply -f k8s_solution/redis/secret.yaml
+kubectl apply -f k8s_solution/frontend-app/secret.yaml
 
-# 3. Deploy PostgreSQL
-kubectl apply -f k8s_solution/db-pvc.yml
-kubectl apply -f k8s_solution/db-deploy.yml
-kubectl apply -f k8s_solution/db-svc.yml
+# 3. Deploy data stores
+kubectl apply -k k8s_solution/db
+kubectl apply -k k8s_solution/redis
 
 # Wait for PostgreSQL to be ready
 kubectl wait --namespace devops-advisor \
   --for=condition=ready pod -l app=postgres \
   --timeout=180s
 
-# 4. Deploy application
-kubectl apply -f k8s_solution/api-deploy.yml
-kubectl apply -f k8s_solution/api-svc-lb.yml
-kubectl apply -f k8s_solution/api-hpa.yml
+# 4. (Optional) Apply ClusterIssuers for cert-manager
+kubectl apply -f k8s_solution/cert-manager-issuer.yaml
 
-# 5. Setup ingress (App Gateway)
+# 5. Deploy the Next.js app (service + ingress)
+kubectl apply -k k8s_solution/frontend-app
+
+# 6. (Optional) Setup App Gateway ingress for other workloads
 kubectl apply -f k8s_solution/app-ingress-agic.yml
 
-# 6. Monitor rollout
-kubectl rollout status deployment devops-advisor-app -n devops-advisor
+# 7. Monitor rollout
+kubectl rollout status deployment/next-app -n default
 
-# 7. Get external IP (wait a few minutes)
-kubectl get svc devops-advisor-lb -n devops-advisor -w
+# 8. Get ingress / service endpoints
+kubectl get ingress -A
+kubectl get svc -A -w
 
-# 8. View pods and services
-kubectl get pods -n devops-advisor
-kubectl get svc -n devops-advisor
-kubectl get ingress -n devops-advisor
+# 9. View pods
+kubectl get pods -A
 ```
 
 **Verify Deployment:**
 ```bash
 # Check pod logs
-kubectl logs -f deployment/devops-advisor-app -n devops-advisor
+kubectl logs -f deployment/next-app -n default
 
 # Check database connection
 kubectl exec -it deployment/postgres-db -n devops-advisor -- pg_isready
 
-# Test API health
-kubectl port-forward svc/devops-advisor-lb 5001:80 -n devops-advisor
-curl http://localhost:5001/
+# Test frontend health locally
+kubectl port-forward svc/next-app 3000:80 -n default
+curl http://localhost:3000/
 ```
 
 ### ArgoCD GitOps Deployment
@@ -893,9 +823,6 @@ kubectl port-forward svc/grafana 3000:80 -n monitoring
 # Frontend health
 curl http://localhost:3000/health
 
-# Backend health
-curl http://localhost:5001/
-
 # Prometheus metrics (if exposed)
 curl http://localhost:9090/api/v1/query?query=up
 ```
@@ -921,17 +848,16 @@ curl http://localhost:9090/api/v1/query?query=up
 **Kubernetes Secrets:**
 ```bash
 # View secrets
-kubectl get secrets -n devops-advisor
+kubectl get secrets -A
 
-# Create secret from file
-kubectl create secret generic app-secret \
-  --from-literal=OPENAI_API_KEY=sk-... \
-  --from-literal=FLASK_SECRET_KEY=... \
-  -n devops-advisor
+# Apply from sample files (edit first)
+kubectl apply -f k8s_solution/db/secret.yaml
+kubectl apply -f k8s_solution/redis/secret.yaml
+kubectl apply -f k8s_solution/frontend-app/secret.yaml
 
-# Update secret
-kubectl patch secret app-secret -n devops-advisor -p \
-  '{"data":{"OPENAI_API_KEY":"'$(echo -n 'sk-new-key' | base64)}'"}' 
+# Patch individual keys later
+kubectl patch secret postgres-secret -n devops-advisor -p \
+  '{"data":{"POSTGRES_PASSWORD":"'$(echo -n 'new-pass' | base64)'"}}'
 ```
 
 **Azure Key Vault Integration (Optional):**

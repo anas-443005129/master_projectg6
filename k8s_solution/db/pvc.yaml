@@ -4,7 +4,8 @@ metadata:
   name: postgres-pvc
   namespace: devops-advisor
 spec:
-  accessModes: ["ReadWriteOnce"]
+  accessModes:
+    - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
