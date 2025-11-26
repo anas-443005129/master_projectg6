@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "next-auth";
@@ -71,10 +72,13 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
               >
                 <div className="flex w-12 items-center justify-center overflow-hidden">
-                  <img
+                  <Image
                     alt="DevOps AI logo"
                     className="h-full w-full object-cover"
+                    height={48}
+                    priority
                     src="/images/logo.svg"
+                    width={48}
                   />
                 </div>
                 <span className="text-gradient">InfraTech</span>

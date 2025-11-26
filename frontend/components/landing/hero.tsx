@@ -99,8 +99,8 @@ export function Hero() {
               { value: "30%", label: "Cost Savings" },
               { value: "99.9%", label: "Uptime" },
               { value: "24/7", label: "AI Monitor" },
-            ].map((stat, index) => (
-              <div className="text-center lg:text-left" key={index}>
+            ].map((stat) => (
+              <div className="text-center lg:text-left" key={stat.label}>
                 <div className="neon-text font-bold text-gradient-bloom text-xl md:text-2xl">
                   {stat.value}
                 </div>

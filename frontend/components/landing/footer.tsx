@@ -1,4 +1,5 @@
 import { Github, Linkedin, Mail, Twitter } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 const footerSections = [
@@ -56,10 +57,12 @@ export function LandingFooter() {
               href="/"
             >
               <div className="flex w-14 items-center justify-center overflow-hidden">
-                <img
+                <Image
                   alt="InfraTech logo"
                   className="h-full w-full object-cover"
+                  height={56}
                   src="/images/logo.svg"
+                  width={56}
                 />
               </div>
               <span className="text-gradient">InfraTech</span>
@@ -103,12 +106,12 @@ export function LandingFooter() {
           </div>
 
           {/* Footer Links */}
-          {footerSections.map((section, index) => (
-            <div key={index}>
+          {footerSections.map((section) => (
+            <div key={section.title}>
               <h3 className="mb-4 font-bold text-sm">{section.title}</h3>
               <ul className="space-y-3">
-                {section.links.map((link, linkIndex) => (
-                  <li key={linkIndex}>
+                {section.links.map((link) => (
+                  <li key={`${section.title}-${link.href}`}>
                     <Link
                       className="text-muted-foreground text-sm transition-colors hover:text-primary"
                       href={link.href}

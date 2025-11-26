@@ -84,7 +84,7 @@ export function Testimonials() {
         {testimonials.map((testimonial, index) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            key={index}
+            key={testimonial.name}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             viewport={{ once: true }}
             whileHover={{ scale: 1.03 }}
@@ -119,7 +119,10 @@ export function Testimonials() {
               <CardContent>
                 <div className="mb-3 flex gap-1">
                   {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <span className="text-lg text-primary" key={i}>
+                    <span
+                      className="text-lg text-primary"
+                      key={`${testimonial.name}-star-${i}`}
+                    >
                       ★
                     </span>
                   ))}

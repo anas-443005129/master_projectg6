@@ -95,7 +95,7 @@ export function Features() {
         {features.map((feature, index) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            key={index}
+            key={feature.title}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             viewport={{ once: true }}
             whileHover={{ scale: 1.05 }}

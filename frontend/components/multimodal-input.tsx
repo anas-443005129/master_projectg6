@@ -266,13 +266,11 @@ function PureMultimodalInput({
       setUploadQueue((prev) => [...prev, "Pasted image"]);
 
       try {
-        const uploadPromises = imageItems.map(async (item) => {
-          const file = item.getAsFile();
-          if (!file) {
-            return;
-          }
-          return uploadFile(file);
-        });
+        const filesToUpload = imageItems
+          .map((item) => item.getAsFile())
+          .filter((file): file is File => file !== null);
+
+        const uploadPromises = filesToUpload.map((file) => uploadFile(file));
 
         const uploadedAttachments = await Promise.all(uploadPromises);
         const successfullyUploadedAttachments = uploadedAttachments.filter(
@@ -394,7 +392,7 @@ function PureMultimodalInput({
           />{" "}
           <Context {...contextProps} />
         </div>
-        <PromptInputToolbar className="!border-top-0 border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!">
+        <PromptInputToolbar className="border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!">
           <PromptInputTools className="gap-0 sm:gap-0.5">
             <AttachmentsButton
               fileInputRef={fileInputRef}

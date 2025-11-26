@@ -111,7 +111,7 @@ export function Pricing() {
           <motion.div
             className="relative"
             initial={{ opacity: 0, y: 20 }}
-            key={index}
+            key={plan.name}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             viewport={{ once: true }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -125,7 +125,9 @@ export function Pricing() {
             )}
 
             <Card
-              className={`glass-card dark:glass-card-dark hover-lift relative h-full overflow-hidden ${plan.popular ? "border-2 border-primary" : ""}`}
+              className={`glass-card dark:glass-card-dark hover-lift relative h-full overflow-hidden ${
+                plan.popular ? "border-2 border-primary" : ""
+              }`}
             >
               {/* Animated gradient background */}
               <div
@@ -173,13 +175,24 @@ export function Pricing() {
               <CardContent className="space-y-6">
                 {/* Features List */}
                 <ul className="space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li className="flex items-start gap-3" key={idx}>
+                  {plan.features.map((feature) => (
+                    <li
+                      className="flex items-start gap-3"
+                      key={`${plan.name}-${feature}`}
+                    >
                       <Check
-                        className={`mt-0.5 size-5 shrink-0 ${feature.includes("Everything") ? "glow-cyan text-primary" : "text-primary"}`}
+                        className={`mt-0.5 size-5 shrink-0 ${
+                          feature.includes("Everything")
+                            ? "glow-cyan text-primary"
+                            : "text-primary"
+                        }`}
                       />
                       <span
-                        className={`text-sm ${feature.includes("Everything") ? "font-semibold text-primary" : ""}`}
+                        className={`text-sm ${
+                          feature.includes("Everything")
+                            ? "font-semibold text-primary"
+                            : ""
+                        }`}
                       >
                         {feature}
                       </span>
@@ -190,7 +203,11 @@ export function Pricing() {
                 {/* CTA Button */}
                 <Button
                   asChild
-                  className={`w-full ${plan.popular ? "gradient-primary hover-lift glow-green-lg text-white" : "glass dark:glass-dark hover-lift"}`}
+                  className={`w-full ${
+                    plan.popular
+                      ? "gradient-primary hover-lift glow-green-lg text-white"
+                      : "glass dark:glass-dark hover-lift"
+                  }`}
                   size="lg"
                 >
                   <Link

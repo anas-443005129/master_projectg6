@@ -104,7 +104,7 @@ export function UseCases() {
         {useCases.map((useCase, index) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            key={index}
+            key={useCase.title}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             viewport={{ once: true }}
             whileHover={{ scale: 1.03 }}
@@ -128,8 +128,11 @@ export function UseCases() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {useCase.benefits.map((benefit, idx) => (
-                  <div className="flex items-start gap-2" key={idx}>
+                {useCase.benefits.map((benefit) => (
+                  <div
+                    className="flex items-start gap-2"
+                    key={`${useCase.title}-${benefit}`}
+                  >
                     <Check className="mt-0.5 size-5 shrink-0 text-primary" />
                     <span className="text-sm">{benefit}</span>
                   </div>

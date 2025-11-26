@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,12 @@ export function LandingNavbar() {
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link className="flex items-center gap-2 font-bold text-xl" href="/">
           <div className="flex w-14 items-center justify-center overflow-hidden">
-            <img
+            <Image
               alt="DevOps AI logo"
               className="h-full w-full object-cover"
+              height={56}
               src="/images/logo.svg"
+              width={56}
             />
           </div>
           <span className="text-gradient">InfraTech</span>

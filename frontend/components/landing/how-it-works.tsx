@@ -65,13 +65,15 @@ export function HowItWorks() {
         {steps.map((step, index) => (
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            key={index}
+            key={step.title}
             transition={{ duration: 0.6, delay: index * 0.2 }}
             viewport={{ once: true }}
             whileInView={{ opacity: 1, y: 0 }}
           >
             <Card
-              className={`glass-card dark:glass-card-dark overflow-hidden ${index % 2 === 1 ? "lg:flex-row-reverse" : ""}`}
+              className={`glass-card dark:glass-card-dark overflow-hidden ${
+                index % 2 === 1 ? "lg:flex-row-reverse" : ""
+              }`}
             >
               <div className="grid items-center gap-8 lg:grid-cols-2">
                 {/* Text Content */}

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Sparkles } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -73,10 +74,10 @@ export function CTA() {
               "30-day money-back guarantee",
               "Free onboarding with DevOps Architects",
               "Pre-built Terraform modules included",
-            ].map((benefit, index) => (
+            ].map((benefit) => (
               <div
                 className="flex items-center gap-2 font-medium text-sm"
-                key={index}
+                key={benefit}
               >
                 <CheckCircle className="glow-cyan size-5 text-primary" />
                 <span>{benefit}</span>
@@ -130,7 +131,13 @@ export function CTA() {
                 { name: "GCP", src: "/images/gcp.svg" },
               ].map((tech) => (
                 <div className="flex items-center gap-3" key={tech.name}>
-                  <img alt={tech.name} className="h-8 w-8" src={tech.src} />
+                  <Image
+                    alt={tech.name}
+                    className="h-8 w-8"
+                    height={32}
+                    src={tech.src}
+                    width={32}
+                  />
                 </div>
               ))}
             </div>
