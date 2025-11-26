@@ -3,6 +3,7 @@
 ## Overview
 
 **LLM DevOps Advisor** is a full-stack, production-grade SaaS platform that uses AI to provide intelligent DevOps guidance. It combines:
+
 - **Modern Next.js frontend** (React 19 RC, TypeScript, Tailwind CSS 4.1) with rich editors and real-time UI
 - **Server-side AI workflows** implemented via Next.js App Router (legacy Flask API retired)
 - **PostgreSQL database** with Drizzle ORM migrations
@@ -18,6 +19,7 @@ The platform intelligently generates **cost optimization**, **performance recomm
 ---
 
 ## Table of Contents
+
 - [Quick Start](#quick-start)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -35,12 +37,12 @@ The platform intelligently generates **cost optimization**, **performance recomm
 - [Contributing](#contributing)
 - [License](#license)
 
-
 ---
 
 ## Quick Start
 
 ### Frontend (Next.js)
+
 ```bash
 cd frontend
 
@@ -57,6 +59,7 @@ pnpm start
 ```
 
 ### Docker (Next.js standalone)
+
 ```bash
 cd frontend
 docker build -t devops-advisor-next:latest .
@@ -66,6 +69,7 @@ docker run --rm -p 3000:3000 \
 ```
 
 ### Kubernetes (Production)
+
 ```bash
 # Connect to AKS cluster
 az aks get-credentials --resource-group rg-devops-group6 --name devopsa-aks
@@ -88,6 +92,7 @@ kubectl get svc -A -w  # Watch for external IP/ingress
 ---
 
 ## Features
+
 - **LLM-powered DevOps Guidance:** Five AI endpoints for cost, performance, structure, Terraform, and CLI generation with OpenAI GPT-4o-mini
 - **Multi-cloud Support:** Context-aware recommendations for AWS, Azure, and Google Cloud with region accuracy validation
 - **Cost Optimization:** Saudi Riyal (SAR) pricing, regional cost breakdowns, scale-aware multipliers, and best practices
@@ -109,6 +114,7 @@ kubectl get svc -A -w  # Watch for external IP/ingress
 ## Architecture
 
 ### System Design
+
 ```
 ┌─────────────────┐          ┌─────────────────┐
 │  Next.js        │          │  Flask Backend  │
@@ -139,29 +145,31 @@ kubectl get svc -A -w  # Watch for external IP/ingress
 
 ### Component Breakdown
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Frontend** | Next.js 15, React 19 RC, TypeScript, Tailwind CSS 4.1 | User interface, real-time UI, code/text editors |
-| **Backend API** | Flask, SQLAlchemy, OpenAI SDK, Gunicorn | REST endpoints, LLM integration, business logic |
-| **Database** | PostgreSQL 16 (containerized) | User accounts, query history, persistent state |
-| **Container Registry** | Azure ACR (group6acr) | Stores Docker images for K8s |
-| **Orchestration** | Kubernetes (AKS) | Pod management, scaling, networking, secrets |
-| **Infrastructure** | Terraform (Azure modules) | Resource provisioning (AKS, RG, ACR, disks) |
-| **Deployment** | ArgoCD, GitHub Actions | GitOps sync, CI/CD automation |
-| **Monitoring** | Prometheus, Grafana, OpenTelemetry | Metrics, dashboards, APM |
-| **Secrets** | Kubernetes Secrets, Azure Key Vault | API keys, DB credentials |
+| Component              | Technology                                            | Purpose                                         |
+| ---------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| **Frontend**           | Next.js 15, React 19 RC, TypeScript, Tailwind CSS 4.1 | User interface, real-time UI, code/text editors |
+| **Backend API**        | Flask, SQLAlchemy, OpenAI SDK, Gunicorn               | REST endpoints, LLM integration, business logic |
+| **Database**           | PostgreSQL 16 (containerized)                         | User accounts, query history, persistent state  |
+| **Container Registry** | Azure ACR (group6acr)                                 | Stores Docker images for K8s                    |
+| **Orchestration**      | Kubernetes (AKS)                                      | Pod management, scaling, networking, secrets    |
+| **Infrastructure**     | Terraform (Azure modules)                             | Resource provisioning (AKS, RG, ACR, disks)     |
+| **Deployment**         | ArgoCD, GitHub Actions                                | GitOps sync, CI/CD automation                   |
+| **Monitoring**         | Prometheus, Grafana, OpenTelemetry                    | Metrics, dashboards, APM                        |
+| **Secrets**            | Kubernetes Secrets, Azure Key Vault                   | API keys, DB credentials                        |
 
 ---
 
 ## Technology Stack
 
 **Backend:**
+
 - Python 3.11, Flask, SQLAlchemy, Flask-Login
 - OpenAI API (gpt-4o-mini for recommendations)
 - Gunicorn (4 workers, 120s timeout)
 - psycopg2 (PostgreSQL driver)
 
 **Frontend:**
+
 - Node.js 18+, pnpm 9.12.3
 - Next.js 15 (app router, SSR, edge runtime ready)
 - React 19 RC, TypeScript (strict mode)
@@ -173,6 +181,7 @@ kubectl get svc -A -w  # Watch for external IP/ingress
 - Playwright (E2E tests)
 
 **Infrastructure & Deployment:**
+
 - Docker (Python 3.11-slim, non-root user)
 - Kubernetes (AKS), Helm
 - Terraform 1.5+, Azure provider
@@ -180,12 +189,14 @@ kubectl get svc -A -w  # Watch for external IP/ingress
 - GitHub Actions (CI/CD)
 
 **Monitoring & Observability:**
+
 - Prometheus (metrics collection)
 - Grafana (dashboards)
 - OpenTelemetry (distributed tracing)
 - Structured logging (Gunicorn, K8s)
 
 **Cloud Platform:**
+
 - Azure AKS (Kubernetes cluster)
 - Azure ACR (container registry)
 - Azure PostgreSQL Flexible Server (managed DB)
@@ -196,7 +207,7 @@ kubectl get svc -A -w  # Watch for external IP/ingress
 
 ## Project Structure
 
-```
+````
 master_projectg6/
 ├── README.md                         # This file
 ├── LICENSE                           # MIT License
@@ -322,7 +333,7 @@ master_projectg6/
 git clone https://github.com/anas-443005129/master_projectg6.git
 cd master_projectg6
 git checkout frontend  # Switch to frontend branch
-```
+````
 
 #### 2. Frontend Setup (Next.js)
 
@@ -350,6 +361,7 @@ pnpm format
 #### 3. PostgreSQL Database
 
 **Option A: Docker Container**
+
 ```bash
 docker run -d \
   --name postgres-dev \
@@ -361,6 +373,7 @@ docker run -d \
 ```
 
 **Option B: Local Installation**
+
 ```bash
 # On macOS with Homebrew
 brew install postgresql@16
@@ -420,6 +433,7 @@ docker run -d --name redis-dev \
 | `/init-db` | GET | Manual database initialization |
 
 **Making LLM Requests:**
+
 ```bash
 curl -X POST http://localhost:5001/best_practices_cost \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -427,6 +441,7 @@ curl -X POST http://localhost:5001/best_practices_cost \
 ```
 
 **Database Debugging:**
+
 ```bash
 # Connect to database
 psql -U postgres -d devops_advisor_db
@@ -441,6 +456,7 @@ SELECT * FROM histories WHERE user_id = 1 ORDER BY created_at DESC LIMIT 5;
 ### Frontend Development (Next.js)
 
 **Key Commands:**
+
 ```bash
 # Start with Turbo for faster rebuilds
 pnpm dev
@@ -472,6 +488,7 @@ pnpm db:pull       # Pull schema from database
 ```
 
 **File Organization:**
+
 - `app/` – Pages and layouts using app router
 - `components/` – Reusable React components
 - `artifacts/` – Artifact handlers (code, images, sheets, etc.)
@@ -482,12 +499,14 @@ pnpm db:pull       # Pull schema from database
 ### Code Style & Quality
 
 **Backend:**
+
 - Black code formatting
 - Type hints with Python 3.11
 - SQLAlchemy async-ready models
 - Docstrings for functions/classes
 
 **Frontend:**
+
 - Biome code formatter and linter
 - TypeScript strict mode
 - ESLint for code quality
@@ -502,21 +521,25 @@ pnpm db:pull       # Pull schema from database
 ### Authentication
 
 **POST /auth/register**
+
 ```json
 {
   "email": "user@example.com",
   "password": "secure-password"
 }
 ```
+
 Response: Redirect to login
 
 **POST /auth/login**
+
 ```json
 {
   "email": "user@example.com",
   "password": "secure-password"
 }
 ```
+
 Response: Redirect to dashboard
 
 **GET /auth/logout**
@@ -527,6 +550,7 @@ Response: Redirect to login
 **POST /best_practices_cost**
 
 Parameters:
+
 - `provider` (string): AWS, Azure, Google Cloud
 - `description` (string): Project description
 - `scale` (string): Small/Medium/Large
@@ -534,6 +558,7 @@ Parameters:
 - `country` (string, optional): User's country
 
 Response:
+
 ```json
 {
   "cost": "Detailed cost optimization recommendations in SAR..."
@@ -545,6 +570,7 @@ Response:
 Same parameters as cost endpoint.
 
 Response:
+
 ```json
 {
   "performance": "Performance optimization strategies..."
@@ -556,6 +582,7 @@ Response:
 Generates AI-inferred project structure based on description.
 
 Response:
+
 ```json
 {
   "structure": "project-root/\n├── frontend/\n├── backend/\n├── terraform/\n..."
@@ -567,6 +594,7 @@ Response:
 Generates complete Terraform modules.
 
 Response:
+
 ```json
 {
   "terraform": "### FILE: main.tf\n...\n### FILE: modules/..."
@@ -578,6 +606,7 @@ Response:
 Generates provisioning script (Bash/PowerShell).
 
 Response:
+
 ```json
 {
   "cli": "#!/usr/bin/env bash\nset -uo pipefail\n..."
@@ -591,6 +620,7 @@ Response:
 Returns user's query history (max 50).
 
 Response:
+
 ```json
 {
   "history": [
@@ -613,6 +643,7 @@ Response:
 Exports history as downloadable JSON with optional filters.
 
 Parameters:
+
 - `type` (optional): cost|performance|structure|terraform|cli|all
 - `q` (optional): Full-text search in prompt/result
 - `include_raw` (optional): 1 to include raw markdown
@@ -622,6 +653,7 @@ Parameters:
 ## Database Schema
 
 ### Users Table
+
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -632,6 +664,7 @@ CREATE TABLE users (
 ```
 
 ### History Table
+
 ```sql
 CREATE TABLE histories (
   id SERIAL PRIMARY KEY,
@@ -654,12 +687,14 @@ CREATE TABLE histories (
 ### Docker Image
 
 **Build:**
+
 ```bash
 cd frontend
 docker build -t devops-advisor-next:latest .
 ```
 
 **Run:**
+
 ```bash
 docker run --rm -p 3000:3000 \
   --env-file .env.local \
@@ -702,6 +737,7 @@ terraform output
 ### Kubernetes Deployment
 
 **Prerequisites:**
+
 - AKS cluster running
 - kubectl configured
 - ACR integrated with AKS
@@ -751,6 +787,7 @@ kubectl get pods -A
 ```
 
 **Verify Deployment:**
+
 ```bash
 # Check pod logs
 kubectl logs -f deployment/next-app -n default
@@ -789,6 +826,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 ### Prometheus & Grafana
 
 **Deploy Prometheus & Grafana:**
+
 ```bash
 # Add Prometheus Helm repo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -812,6 +850,7 @@ kubectl port-forward svc/grafana 3000:80 -n monitoring
 ### Application Monitoring
 
 **Key Metrics:**
+
 - Pod CPU/Memory usage
 - Request latency and throughput
 - Database connection pool usage
@@ -819,6 +858,7 @@ kubectl port-forward svc/grafana 3000:80 -n monitoring
 - Error rates by endpoint
 
 **Health Check Endpoints:**
+
 ```bash
 # Frontend health
 curl http://localhost:3000/health
@@ -830,11 +870,13 @@ curl http://localhost:9090/api/v1/query?query=up
 ### OpenTelemetry Integration
 
 **Frontend Instrumentation:**
+
 - Configured in `frontend/instrumentation.ts`
 - Automatic tracing for React components, API calls
 - Export to Vercel OTEL collector or self-hosted
 
 **Backend Instrumentation:**
+
 - Gunicorn access/error logs
 - Structured logging for LLM calls
 - Database query performance
@@ -846,6 +888,7 @@ curl http://localhost:9090/api/v1/query?query=up
 ### Secrets Management
 
 **Kubernetes Secrets:**
+
 ```bash
 # View secrets
 kubectl get secrets -A
@@ -861,6 +904,7 @@ kubectl patch secret postgres-secret -n devops-advisor -p \
 ```
 
 **Azure Key Vault Integration (Optional):**
+
 ```bash
 # Enable Key Vault secret driver on AKS
 az aks addon enable --addons azure-keyvault-secrets-provider \
@@ -893,18 +937,21 @@ EOF
 ### Authentication & Authorization
 
 **Backend Security:**
+
 - Passwords hashed with Werkzeug (PBKDF2)
 - Flask-Login session management
 - CSRF protection via Flask
 - SQL injection prevention via SQLAlchemy ORM
 
 **Frontend Security:**
+
 - NextAuth for session management
 - HTTPS-only cookies
 - XSS protection via React's built-in escaping
 - CORS configured for backend domain
 
 **Network Security:**
+
 - Azure App Gateway HTTPS enforcement
 - TLS 1.2+ only
 - WAF (Web Application Firewall) rules
@@ -913,6 +960,7 @@ EOF
 ### Best Practices
 
 ✅ **Implemented:**
+
 - Non-root user in Docker container (appuser)
 - Resource limits on K8s pods (requests/limits)
 - Health checks (readiness/liveness probes)
@@ -920,6 +968,7 @@ EOF
 - Managed identity for AKS → ACR pull
 
 ⚠️ **Recommended Additions:**
+
 - Enable audit logging on AKS
 - Configure Network Policies for pod isolation
 - Implement rate limiting on API endpoints
@@ -935,6 +984,7 @@ EOF
 ### Backend Issues
 
 **Flask app won't start:**
+
 ```bash
 # Check environment variables
 env | grep OPENAI_API_KEY
@@ -950,6 +1000,7 @@ python Flask_App.py 2>&1 | tail -50
 ```
 
 **Database connection timeout:**
+
 ```bash
 # Verify PostgreSQL is running
 docker ps | grep postgres
@@ -962,6 +1013,7 @@ psql -h localhost -U postgres -c "SELECT 1"
 ```
 
 **OpenAI API errors:**
+
 ```bash
 # Verify API key
 echo $OPENAI_API_KEY
@@ -974,6 +1026,7 @@ curl https://api.openai.com/v1/models \
 ### Frontend Issues
 
 **Next.js build fails:**
+
 ```bash
 # Clear build cache
 rm -rf .next
@@ -986,6 +1039,7 @@ pnpm run tsc --noEmit
 ```
 
 **Tailwind CSS not loading:**
+
 ```bash
 # Verify Tailwind config
 cat tailwind.config.ts
@@ -1000,6 +1054,7 @@ pnpm build
 ### Kubernetes Issues
 
 **Pod won't start:**
+
 ```bash
 # Check pod status
 kubectl describe pod <pod-name> -n devops-advisor
@@ -1012,6 +1067,7 @@ kubectl get events -n devops-advisor
 ```
 
 **Database pod stuck pending:**
+
 ```bash
 # Check PVC status
 kubectl get pvc -n devops-advisor
@@ -1024,6 +1080,7 @@ kubectl describe pvc postgres-pvc -n devops-advisor
 ```
 
 **App can't connect to database:**
+
 ```bash
 # Verify DB service
 kubectl get svc postgres-db -n devops-advisor
@@ -1037,6 +1094,7 @@ kubectl get pod -l app=postgres -n devops-advisor
 ```
 
 **LoadBalancer stuck on "pending":**
+
 ```bash
 # Check service events
 kubectl describe svc devops-advisor-lb -n devops-advisor
@@ -1051,6 +1109,7 @@ kubectl get svc devops-advisor-lb -n devops-advisor -w
 ### Terraform Issues
 
 **Provider authentication failed:**
+
 ```bash
 # Verify Azure CLI login
 az account show
@@ -1066,6 +1125,7 @@ TF_LOG=DEBUG terraform plan
 ```
 
 **Resource conflicts:**
+
 ```bash
 # List existing resources
 az resource list --resource-group rg-devops-group6
@@ -1080,6 +1140,7 @@ terraform apply
 ### Container Registry Issues
 
 **ACR authentication failed:**
+
 ```bash
 # Login to ACR
 az acr login --name group6acr
@@ -1099,25 +1160,30 @@ az aks show --resource-group rg-devops-group6 --name devopsa-aks \
 We welcome contributions! Please follow these guidelines:
 
 1. **Fork the repository** and create a feature branch:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Write clear, descriptive commits:**
+
    ```bash
    git commit -m "feat(backend): add cost optimization for SAR pricing"
    ```
 
 3. **Follow code style:**
+
    - Backend: Black formatter, type hints
    - Frontend: Biome formatter/linter
    - Test your changes locally
 
 4. **Add tests** for new features:
+
    - Backend: Unit tests with pytest (if added)
    - Frontend: E2E tests with Playwright
 
 5. **Submit a pull request** with:
+
    - Clear description of changes
    - Screenshots/videos if UI changes
    - Testing steps
@@ -1151,6 +1217,7 @@ This project is licensed under the **MIT License**. See [`LICENSE`](LICENSE) for
 ## Support & Resources
 
 **Documentation:**
+
 - [Flask Documentation](https://flask.palletsprojects.com/)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
@@ -1159,11 +1226,13 @@ This project is licensed under the **MIT License**. See [`LICENSE`](LICENSE) for
 - [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
 
 **Community:**
+
 - GitHub Issues: Report bugs and feature requests
 - GitHub Discussions: Ask questions and share ideas
 - Pull Requests: Submit improvements
 
 **Getting Help:**
+
 - Review the [Troubleshooting](#troubleshooting) section
 - Check existing GitHub issues
 - Read endpoint documentation in [API Endpoints](#api-endpoints)
@@ -1174,6 +1243,7 @@ This project is licensed under the **MIT License**. See [`LICENSE`](LICENSE) for
 ## Project Status
 
 ✅ **Production Ready**
+
 - Full-stack application with all core features
 - Containerized and orchestrated on Kubernetes
 - Infrastructure-as-Code with Terraform
@@ -1181,6 +1251,7 @@ This project is licensed under the **MIT License**. See [`LICENSE`](LICENSE) for
 - Monitoring and observability in place
 
 🚀 **Future Enhancements**
+
 - Async task queues for long-running LLM calls
 - Advanced caching layer (Redis)
 - Multi-language support for UI
@@ -1193,6 +1264,7 @@ This project is licensed under the **MIT License**. See [`LICENSE`](LICENSE) for
 ## Contact
 
 For questions, suggestions, or inquiries:
+
 - **GitHub**: [@anas-443005129](https://github.com/anas-443005129)
 - **Issues**: [GitHub Issues](https://github.com/anas-443005129/master_projectg6/issues)
 

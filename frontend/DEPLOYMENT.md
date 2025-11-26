@@ -27,13 +27,13 @@ kubectl apply -f k8s_solution/frontend-app/secret.yaml
 
 Required keys:
 
-| Variable | Purpose |
-| --- | --- |
-| `AUTH_SECRET` | NextAuth signing/encryption secret |
-| `AI_GATEWAY_API_KEY` | Access to the AI Gateway if you are not on Vercel |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Store token |
-| `POSTGRES_URL` | Database connection string consumed by Drizzle ORM |
-| `REDIS_URL` | Redis connection for sessions/cache |
+| Variable                | Purpose                                            |
+| ----------------------- | -------------------------------------------------- |
+| `AUTH_SECRET`           | NextAuth signing/encryption secret                 |
+| `AI_GATEWAY_API_KEY`    | Access to the AI Gateway if you are not on Vercel  |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Store token                            |
+| `POSTGRES_URL`          | Database connection string consumed by Drizzle ORM |
+| `REDIS_URL`             | Redis connection for sessions/cache                |
 
 Add any additional application-specific variables the app expects.
 

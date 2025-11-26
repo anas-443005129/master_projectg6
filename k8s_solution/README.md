@@ -4,7 +4,6 @@ This folder holds Kubernetes manifests for deploying the application and related
 
 Quick notes
 
-
 ```bash
 # 1. Create namespace (if provided)
 kubectl apply -f namespace.yml
@@ -32,6 +31,5 @@ kubectl apply -f cert-manager-issuer.yaml
 ```
 
 Deploy the Next.js frontend bundle with `kubectl apply -k frontend-app` (ensure `frontend-app/ingress.yaml` uses your domain and TLS secret).
-
 
 Customize secrets and configuration before applying to production clusters.
