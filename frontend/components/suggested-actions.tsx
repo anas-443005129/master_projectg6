@@ -37,7 +37,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
           whileTap={{ scale: 0.98 }}
         >
           <Suggestion
-            className="h-auto w-full whitespace-normal p-4 text-left glass-card dark:glass-card-dark hover-lift border-gradient relative overflow-hidden group"
+            className="glass-card dark:glass-card-dark hover-lift group relative h-auto w-full overflow-hidden whitespace-normal border-gradient p-4 text-left"
             onClick={(suggestion) => {
               window.history.replaceState({}, "", `/chat/${chatId}`);
               sendMessage({
@@ -47,7 +47,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
             }}
             suggestion={suggestedAction}
           >
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity shimmer" />
+            <div className="shimmer absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100" />
             <span className="relative z-10">{suggestedAction}</span>
           </Suggestion>
         </motion.div>

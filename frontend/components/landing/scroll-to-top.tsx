@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
@@ -33,16 +33,16 @@ export function ScrollToTop() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
+          className="fixed right-8 bottom-8 z-50"
           exit={{ opacity: 0, scale: 0.5 }}
+          initial={{ opacity: 0, scale: 0.5 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-8 right-8 z-50"
         >
           <Button
+            className="gradient-primary hover-lift glow-green size-12 rounded-full text-white shadow-lg"
             onClick={scrollToTop}
             size="icon"
-            className="size-12 rounded-full gradient-primary text-white shadow-lg hover-lift glow-green"
           >
             <ArrowUp size={20} />
           </Button>

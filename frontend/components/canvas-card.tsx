@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { CheckCircleFillIcon, CodeIcon, CopyIcon, FileIcon } from "./icons";
 import { Button } from "./ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "./ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 
 export type CanvasCard = {
   id: string;
@@ -63,25 +58,27 @@ export function CanvasCard({ card }: CanvasCardProps) {
   return (
     <>
       <button
-        className="group flex w-full max-w-md flex-row items-center gap-3 rounded-xl p-4 text-left transition-all glass-card dark:glass-card-dark hover-lift animated-border"
+        className="group glass-card dark:glass-card-dark hover-lift animated-border flex w-full max-w-md flex-row items-center gap-3 rounded-xl p-4 text-left transition-all"
         onClick={() => setIsOpen(true)}
         type="button"
       >
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-lg gradient-primary text-white shadow-lg">
+        <div className="gradient-primary flex size-12 shrink-0 items-center justify-center rounded-lg text-white shadow-lg">
           {getIcon()}
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold text-sm">{card.title}</div>
-          <div className="text-muted-foreground text-xs font-medium">{getTypeLabel()}</div>
+          <div className="font-medium text-muted-foreground text-xs">
+            {getTypeLabel()}
+          </div>
         </div>
-        <div className="text-primary font-medium text-sm">View →</div>
+        <div className="font-medium text-primary text-sm">View →</div>
       </button>
 
       <Sheet onOpenChange={setIsOpen} open={isOpen}>
-        <SheetContent className="w-full overflow-auto sm:max-w-3xl glass-dark backdrop-blur-xl border-white/10">
+        <SheetContent className="glass-dark w-full overflow-auto border-white/10 backdrop-blur-xl sm:max-w-3xl">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-3 text-gradient text-lg">
-              <div className="flex size-10 items-center justify-center rounded-lg gradient-primary text-white">
+              <div className="gradient-primary flex size-10 items-center justify-center rounded-lg text-white">
                 {getIcon()}
               </div>
               {card.title}
@@ -90,7 +87,7 @@ export function CanvasCard({ card }: CanvasCardProps) {
           <div className="relative mt-6 flex-1">
             <div className="mb-3 flex justify-end">
               <Button
-                className="h-9 gap-2 gradient-primary text-white hover-lift glow-green"
+                className="gradient-primary hover-lift glow-green h-9 gap-2 text-white"
                 onClick={handleCopy}
                 size="sm"
               >
@@ -108,7 +105,9 @@ export function CanvasCard({ card }: CanvasCardProps) {
               </Button>
             </div>
             <pre className="overflow-x-auto rounded-xl border border-primary/20 bg-black/40 p-5 font-mono text-sm shadow-2xl">
-              <code className={card.language ? `language-${card.language}` : ""}>
+              <code
+                className={card.language ? `language-${card.language}` : ""}
+              >
                 {card.content}
               </code>
             </pre>

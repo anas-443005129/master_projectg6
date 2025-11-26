@@ -4,7 +4,6 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { motion } from "framer-motion";
 import { memo } from "react";
 import type { ChatMessage } from "@/lib/types";
-import { Suggestion } from "./elements/suggestion";
 
 type FollowUpSuggestionsProps = {
   suggestions: string[];
@@ -21,28 +20,28 @@ function PureFollowUpSuggestions({
 
   return (
     <div className="mt-5 flex w-full flex-col gap-3">
-      <div className="text-gradient text-sm font-semibold flex items-center gap-2">
-        <span className="inline-block size-1.5 rounded-full bg-primary animate-pulse" />
+      <div className="flex items-center gap-2 font-semibold text-gradient text-sm">
+        <span className="inline-block size-1.5 animate-pulse rounded-full bg-primary" />
         Continue the conversation
       </div>
       <div className="flex flex-wrap gap-2.5">
         {suggestions.map((suggestion, index) => (
           <motion.button
-            key={suggestion}
-            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 * index }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="group relative overflow-hidden rounded-full px-4 py-2 text-sm font-medium transition-all glass dark:glass-dark border border-primary/30 hover-lift"
+            className="group glass dark:glass-dark hover-lift relative overflow-hidden rounded-full border border-primary/30 px-4 py-2 font-medium text-sm transition-all"
+            initial={{ opacity: 0, scale: 0.9 }}
+            key={suggestion}
             onClick={() => {
               sendMessage({
                 role: "user",
                 parts: [{ type: "text", text: suggestion }],
               });
             }}
+            transition={{ delay: 0.1 * index }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity shimmer" />
+            <div className="shimmer absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100" />
             <span className="relative z-10 flex items-center gap-2">
               <span className="text-primary">→</span>
               {suggestion}

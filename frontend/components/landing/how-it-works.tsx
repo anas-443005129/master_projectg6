@@ -1,77 +1,88 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardTitle } from "@/components/ui/card";
 
 const steps = [
   {
     number: "01",
     title: "Connect",
-    description: "Connect your cloud environment via secure APIs. Integrate with Azure, AWS, or GCP in minutes without exposing sensitive data.",
-    image: "/images/devops-1.png"
+    description:
+      "Connect your cloud environment via secure APIs. Integrate with Azure, AWS, or GCP in minutes without exposing sensitive data.",
+    image: "/images/devops-1.png",
   },
   {
     number: "02",
     title: "Analyze",
-    description: "Analyze IaC, metrics, and pipelines using fine-tuned LLMs. Our models understand Terraform, CloudFormation, and Kubernetes manifests.",
-    image: "/images/devops-2.png"
+    description:
+      "Analyze IaC, metrics, and pipelines using fine-tuned LLMs. Our models understand Terraform, CloudFormation, and Kubernetes manifests.",
+    image: "/images/devops-2.png",
   },
   {
     number: "03",
     title: "Advise",
-    description: "Advise on scaling, cost, and performance improvements. Get actionable recommendations backed by DevOps best practices.",
-    image: "/images/devops-3.png"
+    description:
+      "Advise on scaling, cost, and performance improvements. Get actionable recommendations backed by DevOps best practices.",
+    image: "/images/devops-3.png",
   },
   {
     number: "04",
     title: "Automate & Monitor",
-    description: "Automate changes through Terraform and GitHub Actions. Monitor outcomes in real-time through Prometheus and Grafana dashboards.",
-    image: "/images/devops-4.png"
-  }
+    description:
+      "Automate changes through Terraform and GitHub Actions. Monitor outcomes in real-time through Prometheus and Grafana dashboards.",
+    image: "/images/devops-4.png",
+  },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="container mx-auto px-4 py-24 md:py-32 bg-muted/30">
+    <section
+      className="container mx-auto bg-muted/30 px-4 py-24 md:py-32"
+      id="how-it-works"
+    >
       <motion.div
+        className="mb-16 space-y-4 text-center"
         initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="text-center space-y-4 mb-16"
+        viewport={{ once: true }}
+        whileInView={{ opacity: 1, y: 0 }}
       >
-        <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
+        <Badge className="mb-4 px-4 py-1 text-sm" variant="secondary">
           Simple Process
         </Badge>
-        <h2 className="text-4xl md:text-5xl font-bold">
-          How It{" "}
-          <span className="text-gradient">Works</span>
+        <h2 className="font-bold text-4xl md:text-5xl">
+          How It <span className="text-gradient">Works</span>
         </h2>
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Get started in minutes, not weeks. Our AI guides you every step of the way.
+        <p className="mx-auto max-w-3xl text-muted-foreground text-xl">
+          Get started in minutes, not weeks. Our AI guides you every step of the
+          way.
         </p>
       </motion.div>
 
       <div className="space-y-16">
         {steps.map((step, index) => (
           <motion.div
-            key={index}
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            key={index}
             transition={{ duration: 0.6, delay: index * 0.2 }}
+            viewport={{ once: true }}
+            whileInView={{ opacity: 1, y: 0 }}
           >
-            <Card className={`glass-card dark:glass-card-dark overflow-hidden ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
-              <div className="grid lg:grid-cols-2 gap-8 items-center">
+            <Card
+              className={`glass-card dark:glass-card-dark overflow-hidden ${index % 2 === 1 ? "lg:flex-row-reverse" : ""}`}
+            >
+              <div className="grid items-center gap-8 lg:grid-cols-2">
                 {/* Text Content */}
-                <div className="p-8 lg:p-12 space-y-4">
+                <div className="space-y-4 p-8 lg:p-12">
                   <div className="flex items-center gap-4">
-                    <div className="size-16 rounded-full gradient-primary flex items-center justify-center text-white text-2xl font-bold shadow-lg pulse-glow">
+                    <div className="gradient-primary pulse-glow flex size-16 items-center justify-center rounded-full font-bold text-2xl text-white shadow-lg">
                       {step.number}
                     </div>
-                    <CardTitle className="text-2xl md:text-3xl">{step.title}</CardTitle>
+                    <CardTitle className="text-2xl md:text-3xl">
+                      {step.title}
+                    </CardTitle>
                   </div>
                   <p className="text-lg text-muted-foreground">
                     {step.description}
@@ -79,12 +90,12 @@ export function HowItWorks() {
                 </div>
 
                 {/* Image */}
-                <div className="relative h-64 lg:h-96 overflow-hidden">
+                <div className="relative h-64 overflow-hidden lg:h-96">
                   <Image
-                    src={step.image}
                     alt={step.title}
+                    className="rounded-r-xl object-cover"
                     fill
-                    className="object-cover rounded-r-xl"
+                    src={step.image}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                 </div>

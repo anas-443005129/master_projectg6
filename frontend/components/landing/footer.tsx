@@ -1,5 +1,5 @@
+import { Github, Linkedin, Mail, Twitter } from "lucide-react";
 import Link from "next/link";
-import { Sparkles, Github, Twitter, Linkedin, Mail } from "lucide-react";
 
 const footerSections = [
   {
@@ -9,8 +9,8 @@ const footerSections = [
       { label: "How It Works", href: "#how-it-works" },
       { label: "Use Cases", href: "#use-cases" },
       { label: "Pricing", href: "#pricing" },
-      { label: "Documentation", href: "/docs" }
-    ]
+      { label: "Documentation", href: "/docs" },
+    ],
   },
   {
     title: "Company",
@@ -19,8 +19,8 @@ const footerSections = [
       { label: "Blog", href: "/blog" },
       { label: "Careers", href: "/careers" },
       { label: "Contact", href: "/contact" },
-      { label: "Press Kit", href: "/press" }
-    ]
+      { label: "Press Kit", href: "/press" },
+    ],
   },
   {
     title: "Resources",
@@ -29,8 +29,8 @@ const footerSections = [
       { label: "CLI Documentation", href: "/cli" },
       { label: "Integrations", href: "/integrations" },
       { label: "Status", href: "/status" },
-      { label: "Support", href: "/support" }
-    ]
+      { label: "Support", href: "/support" },
+    ],
   },
   {
     title: "Legal",
@@ -39,55 +39,63 @@ const footerSections = [
       { label: "Terms of Service", href: "/terms" },
       { label: "Security", href: "/security" },
       { label: "Compliance", href: "/compliance" },
-      { label: "Cookie Policy", href: "/cookies" }
-    ]
-  }
+      { label: "Cookie Policy", href: "/cookies" },
+    ],
+  },
 ];
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-primary/20 bg-muted/30">
+    <footer className="border-primary/20 border-t bg-muted/30">
       <div className="container mx-auto px-4 py-12 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
+        <div className="mb-12 grid grid-cols-2 gap-8 md:grid-cols-6">
           {/* Brand Column */}
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-4">
-              <div className="flex items-center justify-center w-14 overflow-hidden">
-                <img src="/images/logo.svg" alt="InfraTech logo" className="h-full w-full object-cover" />
+            <Link
+              className="mb-4 flex items-center gap-2 font-bold text-xl"
+              href="/"
+            >
+              <div className="flex w-14 items-center justify-center overflow-hidden">
+                <img
+                  alt="InfraTech logo"
+                  className="h-full w-full object-cover"
+                  src="/images/logo.svg"
+                />
               </div>
               <span className="text-gradient">InfraTech</span>
             </Link>
-            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-              AI-powered DevOps automation that helps teams ship faster with confidence.
+            <p className="mb-6 max-w-xs text-muted-foreground text-sm">
+              AI-powered DevOps automation that helps teams ship faster with
+              confidence.
             </p>
             <div className="flex gap-3">
               <a
+                className="glass dark:glass-dark hover-lift flex size-10 items-center justify-center rounded-lg"
                 href="https://github.com"
-                target="_blank"
                 rel="noopener noreferrer"
-                className="size-10 rounded-lg glass dark:glass-dark flex items-center justify-center hover-lift"
+                target="_blank"
               >
                 <Github size={20} />
               </a>
               <a
+                className="glass dark:glass-dark hover-lift flex size-10 items-center justify-center rounded-lg"
                 href="https://twitter.com"
-                target="_blank"
                 rel="noopener noreferrer"
-                className="size-10 rounded-lg glass dark:glass-dark flex items-center justify-center hover-lift"
+                target="_blank"
               >
                 <Twitter size={20} />
               </a>
               <a
+                className="glass dark:glass-dark hover-lift flex size-10 items-center justify-center rounded-lg"
                 href="https://linkedin.com"
-                target="_blank"
                 rel="noopener noreferrer"
-                className="size-10 rounded-lg glass dark:glass-dark flex items-center justify-center hover-lift"
+                target="_blank"
               >
                 <Linkedin size={20} />
               </a>
               <a
+                className="glass dark:glass-dark hover-lift flex size-10 items-center justify-center rounded-lg"
                 href="mailto:hello@devopsai.com"
-                className="size-10 rounded-lg glass dark:glass-dark flex items-center justify-center hover-lift"
               >
                 <Mail size={20} />
               </a>
@@ -97,13 +105,13 @@ export function LandingFooter() {
           {/* Footer Links */}
           {footerSections.map((section, index) => (
             <div key={index}>
-              <h3 className="font-bold text-sm mb-4">{section.title}</h3>
+              <h3 className="mb-4 font-bold text-sm">{section.title}</h3>
               <ul className="space-y-3">
                 {section.links.map((link, linkIndex) => (
                   <li key={linkIndex}>
                     <Link
+                      className="text-muted-foreground text-sm transition-colors hover:text-primary"
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -115,18 +123,27 @@ export function LandingFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-primary/20 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground text-center md:text-left">
+        <div className="flex flex-col items-center justify-between gap-4 border-primary/20 border-t pt-8 md:flex-row">
+          <p className="text-center text-muted-foreground text-sm md:text-left">
             © 2025 InfraTech. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              className="text-muted-foreground text-sm transition-colors hover:text-primary"
+              href="/privacy"
+            >
               Privacy
             </Link>
-            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              className="text-muted-foreground text-sm transition-colors hover:text-primary"
+              href="/terms"
+            >
               Terms
             </Link>
-            <Link href="/security" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              className="text-muted-foreground text-sm transition-colors hover:text-primary"
+              href="/security"
+            >
               Security
             </Link>
           </div>

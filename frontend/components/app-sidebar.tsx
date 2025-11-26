@@ -9,8 +9,8 @@ import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 import { PlusIcon, TrashIcon } from "@/components/icons";
 import {
-  SidebarHistory,
   getChatHistoryPaginationKey,
+  SidebarHistory,
 } from "@/components/sidebar-history";
 import { SidebarUserNav } from "@/components/sidebar-user-nav";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import {
   SidebarMenu,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -64,17 +64,17 @@ export function AppSidebar({ user }: { user: User | undefined }) {
           <SidebarMenu>
             <div className="flex flex-row items-center justify-between">
               <Link
-                href="/chat"
                 className="flex items-center gap-2 font-bold text-lg"
+                href="/chat"
                 onClick={() => {
                   setOpenMobile(false);
                 }}
               >
-                <div className="flex items-center justify-center w-12 overflow-hidden">
+                <div className="flex w-12 items-center justify-center overflow-hidden">
                   <img
-                    src="/images/logo.svg"
                     alt="DevOps AI logo"
                     className="h-full w-full object-cover"
+                    src="/images/logo.svg"
                   />
                 </div>
                 <span className="text-gradient">InfraTech</span>

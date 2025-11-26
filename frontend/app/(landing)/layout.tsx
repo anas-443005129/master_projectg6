@@ -1,9 +1,5 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export default function LandingLayout({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen">
-      {children}
-    </div>
-  );
+  return <div className="min-h-screen">{children}</div>;
 }

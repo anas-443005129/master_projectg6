@@ -81,10 +81,10 @@ function PureMessages({
               key={message.id}
               message={message}
               regenerate={regenerate}
-              sendMessage={sendMessage}
               requiresScrollPadding={
                 hasSentMessage && index === messages.length - 1
               }
+              sendMessage={sendMessage}
               setMessages={setMessages}
               vote={
                 votes

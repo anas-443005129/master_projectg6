@@ -8,7 +8,7 @@ export const Greeting = () => {
     >
       <motion.div
         animate={{ opacity: 1, y: 0 }}
-        className="font-bold text-3xl md:text-5xl mb-2"
+        className="mb-2 font-bold text-3xl md:text-5xl"
         exit={{ opacity: 0, y: 10 }}
         initial={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.5 }}
@@ -19,25 +19,26 @@ export const Greeting = () => {
       </motion.div>
       <motion.div
         animate={{ opacity: 1, y: 0 }}
-        className="text-lg text-muted-foreground md:text-xl font-medium"
+        className="font-medium text-lg text-muted-foreground md:text-xl"
         exit={{ opacity: 0, y: 10 }}
         initial={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.6 }}
       >
-        Ask me about cost estimation, architecture design, or deployment strategies
+        Ask me about cost estimation, architecture design, or deployment
+        strategies
       </motion.div>
       <motion.div
         animate={{ opacity: 1, scale: 1 }}
+        className="mt-6 flex gap-2"
         initial={{ opacity: 0, scale: 0.8 }}
         transition={{ delay: 0.8 }}
-        className="mt-6 flex gap-2"
       >
-        <div className="flex items-center gap-2 rounded-full glass dark:glass-dark border border-primary/30 px-4 py-2 text-sm font-medium">
-          <div className="size-2 rounded-full bg-primary animate-pulse" />
+        <div className="glass dark:glass-dark flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 font-medium text-sm">
+          <div className="size-2 animate-pulse rounded-full bg-primary" />
           <span>AI-Powered</span>
         </div>
-        <div className="flex items-center gap-2 rounded-full glass dark:glass-dark border border-primary/30 px-4 py-2 text-sm font-medium">
-          <div className="size-2 rounded-full bg-primary animate-pulse" />
+        <div className="glass dark:glass-dark flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 font-medium text-sm">
+          <div className="size-2 animate-pulse rounded-full bg-primary" />
           <span>Multi-Cloud Support</span>
         </div>
       </motion.div>

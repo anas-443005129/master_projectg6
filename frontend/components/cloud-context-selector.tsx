@@ -23,8 +23,17 @@ type CloudContextSelectorProps = {
 };
 
 const providers = ["AWS", "Azure", "Google Cloud", "Multi-Cloud"];
-const scales = ["Small (<1k users/day)", "Medium (1k-100k users/day)", "Large (>100k users/day)"];
-const traffic = ["Steady", "Moderate spikes", "High variability", "Seasonal peaks"];
+const scales = [
+  "Small (<1k users/day)",
+  "Medium (1k-100k users/day)",
+  "Large (>100k users/day)",
+];
+const traffic = [
+  "Steady",
+  "Moderate spikes",
+  "High variability",
+  "Seasonal peaks",
+];
 const regions = [
   "US East",
   "US West",
@@ -34,7 +43,10 @@ const regions = [
   "Global (Multi-region)",
 ];
 
-function PureCloudContextSelector({ onContextChange, className }: CloudContextSelectorProps) {
+function PureCloudContextSelector({
+  onContextChange,
+  className,
+}: CloudContextSelectorProps) {
   const [context, setContext] = useState<CloudContext>({
     provider: providers[0],
     scale: scales[0],
@@ -51,16 +63,16 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
   return (
     <div className={`flex flex-wrap gap-2.5 ${className || ""}`}>
       <Select
-        value={context.provider}
         onValueChange={(value) => updateContext("provider", value)}
+        value={context.provider}
       >
-        <SelectTrigger className="h-9 w-auto min-w-[140px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
+        <SelectTrigger className="glass dark:glass-dark hover-lift h-9 w-auto min-w-[140px] gap-2 rounded-lg border-primary/30 px-3 font-medium text-xs shadow-sm">
           <CodeIcon size={14} />
           <SelectValue placeholder="Provider" />
         </SelectTrigger>
         <SelectContent>
           {providers.map((provider) => (
-            <SelectItem key={provider} value={provider} className="text-xs">
+            <SelectItem className="text-xs" key={provider} value={provider}>
               {provider}
             </SelectItem>
           ))}
@@ -68,16 +80,16 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
       </Select>
 
       <Select
-        value={context.scale}
         onValueChange={(value) => updateContext("scale", value)}
+        value={context.scale}
       >
-        <SelectTrigger className="h-9 w-auto min-w-[200px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
+        <SelectTrigger className="glass dark:glass-dark hover-lift h-9 w-auto min-w-[200px] gap-2 rounded-lg border-primary/30 px-3 font-medium text-xs shadow-sm">
           <GaugeIcon size={14} />
           <SelectValue placeholder="Scale" />
         </SelectTrigger>
         <SelectContent>
           {scales.map((scale) => (
-            <SelectItem key={scale} value={scale} className="text-xs">
+            <SelectItem className="text-xs" key={scale} value={scale}>
               {scale}
             </SelectItem>
           ))}
@@ -85,16 +97,16 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
       </Select>
 
       <Select
-        value={context.traffic}
         onValueChange={(value) => updateContext("traffic", value)}
+        value={context.traffic}
       >
-        <SelectTrigger className="h-9 w-auto min-w-[150px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
+        <SelectTrigger className="glass dark:glass-dark hover-lift h-9 w-auto min-w-[150px] gap-2 rounded-lg border-primary/30 px-3 font-medium text-xs shadow-sm">
           <TrendingUpIcon size={14} />
           <SelectValue placeholder="Traffic" />
         </SelectTrigger>
         <SelectContent>
           {traffic.map((t) => (
-            <SelectItem key={t} value={t} className="text-xs">
+            <SelectItem className="text-xs" key={t} value={t}>
               {t}
             </SelectItem>
           ))}
@@ -102,16 +114,16 @@ function PureCloudContextSelector({ onContextChange, className }: CloudContextSe
       </Select>
 
       <Select
-        value={context.region}
         onValueChange={(value) => updateContext("region", value)}
+        value={context.region}
       >
-        <SelectTrigger className="h-9 w-auto min-w-[180px] gap-2 rounded-lg px-3 text-xs font-medium glass dark:glass-dark border-primary/30 hover-lift shadow-sm">
+        <SelectTrigger className="glass dark:glass-dark hover-lift h-9 w-auto min-w-[180px] gap-2 rounded-lg border-primary/30 px-3 font-medium text-xs shadow-sm">
           <GlobeIcon size={14} />
           <SelectValue placeholder="Region" />
         </SelectTrigger>
         <SelectContent>
           {regions.map((region) => (
-            <SelectItem key={region} value={region} className="text-xs">
+            <SelectItem className="text-xs" key={region} value={region}>
               {region}
             </SelectItem>
           ))}

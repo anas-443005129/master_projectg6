@@ -14,12 +14,14 @@ const filePartSchema = z.object({
 
 const partSchema = z.union([textPartSchema, filePartSchema]);
 
-export const cloudContextSchema = z.object({
-  provider: z.string(),
-  scale: z.string(),
-  traffic: z.string(),
-  region: z.string(),
-}).optional();
+export const cloudContextSchema = z
+  .object({
+    provider: z.string(),
+    scale: z.string(),
+    traffic: z.string(),
+    region: z.string(),
+  })
+  .optional();
 
 export const postRequestBodySchema = z.object({
   id: z.string().uuid(),

@@ -9,7 +9,8 @@ import { SessionProvider } from "next-auth/react";
 export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
   title: "Cloud Infrastructure AI Assistant",
-  description: "AI-powered cloud infrastructure advisor for AWS, Azure, and Google Cloud. Get cost estimates, architecture recommendations, and deployment strategies.",
+  description:
+    "AI-powered cloud infrastructure advisor for AWS, Azure, and Google Cloud. Get cost estimates, architecture recommendations, and deployment strategies.",
 };
 
 export const viewport = {
@@ -70,9 +71,9 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          forcedTheme="dark"
           disableTransitionOnChange
           enableSystem={false}
+          forcedTheme="dark"
         >
           <Toaster position="top-center" />
           <SessionProvider>{children}</SessionProvider>
