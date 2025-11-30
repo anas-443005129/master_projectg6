@@ -1,0 +1,67 @@
+services:
+  infracorkapp:
+    build:
+      context: ./Infracorkapp
+      dockerfile: Dockerfile
+      args:
+        SKIP_DB_MIGRATE: "true"
+        POSTGRES_URL: postgres://postgres:postgres@postgres:5432/infracorkapp
+        NEXTAUTH_URL: http://127.0.0.1:3000
+        AUTHJS_URL: http://127.0.0.1:3000
+        AUTHJS_TRUST_HOST: "true"
+        AUTH_SECRET: infracorkapp-secret-key-change-in-prod
+    container_name: infracorkapp
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - HOST=0.0.0.0
+      - PORT=3000
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/infracorkapp
+      - NEXTAUTH_URL=http://localhost:3000
+      - AUTH_URL=http://localhost:3000
+      - AUTHJS_URL=http://localhost:3000
+      - AUTH_TRUST_HOST=true
+      - AUTHJS_TRUST_HOST=true
+      - AUTH_SECRET=infracorkapp-secret-key-change-in-prod
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - infracork-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: infracorkapp-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=infracorkapp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - infracork-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: infracorkapp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - infracork-network
+
+networks:
+  infracork-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
