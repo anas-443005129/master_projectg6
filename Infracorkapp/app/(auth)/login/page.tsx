@@ -36,11 +36,11 @@ export default function Page() {
         type: "error",
         description: "Failed validating your submission!",
       });
-    } else if (state.status === "success") {
+    } else if (state.status === "success" && !isSuccessful) {
       setIsSuccessful(true);
       void updateSession().then(() => router.push("/chat"));
     }
-  }, [state.status, router, updateSession]);
+  }, [state.status, router, updateSession, isSuccessful]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get("email") as string);

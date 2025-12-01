@@ -23,8 +23,19 @@ export async function middleware(request: NextRequest) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-  if (!token) {
+  // Allow unauthenticated access to / and /chat routes
+  if (!token && (pathname === "/" || pathname.startsWith("/chat"))) {
     // Use NEXTAUTH_URL if available, otherwise construct from request headers
+    const origin = process.env.NEXTAUTH_URL || `${request.nextUrl.protocol}//${request.headers.get("host")}`;
+    const redirectUrl = encodeURIComponent(`${origin}${pathname}`);
+
+    return NextResponse.redirect(
+      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, origin)
+    );
+  }
+
+  // For other routes without token, also create guest session
+  if (!token) {
     const origin = process.env.NEXTAUTH_URL || `${request.nextUrl.protocol}//${request.headers.get("host")}`;
     const redirectUrl = encodeURIComponent(`${origin}${pathname}`);
 
@@ -35,8 +46,9 @@ export async function middleware(request: NextRequest) {
 
   const isGuest = guestRegex.test(token?.email ?? "");
 
+  // Redirect authenticated users away from login/register to /chat
   if (token && !isGuest && ["/login", "/register"].includes(pathname)) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/chat", request.url));
   }
 
   return NextResponse.next();
