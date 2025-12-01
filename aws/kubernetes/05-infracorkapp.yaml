@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: infracorkapp
-          image: 319191252186.dkr.ecr.eu-central-1.amazonaws.com/infracork-app-infracork:v20251130-02
+          image: 319191252186.dkr.ecr.eu-central-1.amazonaws.com/infracork-app-infracork:v20251201-01
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
