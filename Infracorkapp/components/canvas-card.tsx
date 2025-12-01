@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 export type CanvasCard = {
   id: string;
   title: string;
-  type: "code" | "pricing" | "architecture" | "config";
+  type: "code" | "pricing" | "architecture" | "config" | "guide";
   content: string;
   language?: string;
 };
@@ -34,6 +34,7 @@ export function CanvasCard({ card }: CanvasCardProps) {
         return <CodeIcon size={16} />;
       case "pricing":
       case "architecture":
+      case "guide":
         return <FileIcon size={16} />;
       default:
         return <FileIcon size={16} />;
@@ -50,6 +51,8 @@ export function CanvasCard({ card }: CanvasCardProps) {
         return "Architecture";
       case "config":
         return "Configuration";
+      case "guide":
+        return "Runbook";
       default:
         return "Document";
     }

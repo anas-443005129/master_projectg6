@@ -2,7 +2,7 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
 import { AnimatePresence } from "framer-motion";
 import { ArrowDownIcon } from "lucide-react";
-import { memo, useEffect } from "react";
+import { memo, useEffect, type ReactNode } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -22,6 +22,7 @@ type MessagesProps = {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   selectedModelId: string;
+  bottomAccessory?: ReactNode;
 };
 
 function PureMessages({
@@ -34,6 +35,7 @@ function PureMessages({
   sendMessage,
   isReadonly,
   selectedModelId,
+  bottomAccessory,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -99,6 +101,8 @@ function PureMessages({
           <AnimatePresence mode="wait">
             {status === "submitted" && <ThinkingMessage key="thinking" />}
           </AnimatePresence>
+
+          {bottomAccessory}
 
           <div className="min-h-6 min-w-6 shrink-0" ref={messagesEndRef} />
         </ConversationContent>

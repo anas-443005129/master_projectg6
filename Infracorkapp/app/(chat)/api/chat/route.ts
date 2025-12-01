@@ -19,6 +19,7 @@ import { getUsage } from "tokenlens/helpers";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import { getModelForMessage } from "@/lib/ai/model-selector";
 import type { ChatModel } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
@@ -179,6 +180,22 @@ export async function POST(request: Request) {
       ],
     });
 
+    // Smart model selection based on user intent (only if "auto" is selected)
+    let finalChatModel = selectedChatModel;
+    
+    if (selectedChatModel === "auto") {
+      const userMessageText = message.parts
+        .filter((p) => p.type === "text")
+        .map((p) => p.text)
+        .join(" ");
+      
+      const modelSelection = getModelForMessage(userMessageText);
+      finalChatModel = modelSelection.model;
+      
+      // Log intent detection for debugging
+      console.log(`[Auto Mode] Intent: ${modelSelection.intent}, Selected: ${finalChatModel}, Reason: ${modelSelection.reasoning}`);
+    }
+
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
@@ -187,16 +204,16 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
         const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
+          model: myProvider.languageModel(finalChatModel),
           system: systemPrompt({
-            selectedChatModel,
+            selectedChatModel: finalChatModel,
             requestHints,
             cloudContext,
           }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            selectedChatModel === "chat-model-reasoning"
+            finalChatModel === "reasoning-model"
               ? []
               : [
                   "getWeather",
@@ -222,7 +239,7 @@ export async function POST(request: Request) {
             try {
               const providers = await getTokenlensCatalog();
               const modelId =
-                myProvider.languageModel(selectedChatModel).modelId;
+                myProvider.languageModel(finalChatModel).modelId;
               if (!modelId) {
                 finalMergedUsage = usage;
                 dataStream.write({

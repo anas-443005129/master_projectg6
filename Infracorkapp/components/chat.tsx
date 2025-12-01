@@ -26,6 +26,7 @@ import type { Attachment, ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { Artifact } from "./artifact";
+import { ChatSuggestions } from "./chat-suggestions";
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
@@ -177,6 +178,16 @@ export function Chat({
 
         <Messages
           chatId={id}
+          bottomAccessory={
+            !isReadonly && sendMessage ? (
+              <ChatSuggestions
+                cloudContext={cloudContext}
+                isLoading={status === "streaming"}
+                messages={messages}
+                sendMessage={sendMessage}
+              />
+            ) : null
+          }
           isArtifactVisible={isArtifactVisible}
           isReadonly={isReadonly}
           messages={messages}
@@ -188,7 +199,7 @@ export function Chat({
           votes={votes}
         />
 
-        <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+        <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl flex-col gap-3 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
           {!isReadonly && (
             <MultimodalInput
               attachments={attachments}

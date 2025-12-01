@@ -87,7 +87,47 @@ export function ModelSelector({
                 type="button"
               >
                 <div className="flex flex-col items-start gap-1">
-                  <div className="text-sm sm:text-base">{chatModel.name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base">
+                      {chatModel.name}
+                    </span>
+                    {chatModel.badge && (
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                          chatModel.badge === "Smart" &&
+                            "bg-purple-500/20 text-purple-700 dark:text-purple-300",
+                          chatModel.badge === "Fast" &&
+                            "bg-blue-500/20 text-blue-700 dark:text-blue-300",
+                          chatModel.badge === "Budget" &&
+                            "bg-green-500/20 text-green-700 dark:text-green-300",
+                          chatModel.badge === "Vision" &&
+                            "bg-amber-500/20 text-amber-700 dark:text-amber-300",
+                          chatModel.badge === "Flash" &&
+                            "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300"
+                        )}
+                      >
+                        {chatModel.badge}
+                      </span>
+                    )}
+                    {chatModel.pricing && (
+                      <span
+                        className={cn(
+                          "text-[10px]",
+                          chatModel.pricing === "cheap" &&
+                            "text-green-600 dark:text-green-400",
+                          chatModel.pricing === "moderate" &&
+                            "text-amber-600 dark:text-amber-400",
+                          chatModel.pricing === "expensive" &&
+                            "text-red-600 dark:text-red-400"
+                        )}
+                      >
+                        {chatModel.pricing === "cheap" && "💰"}
+                        {chatModel.pricing === "moderate" && "💰💰"}
+                        {chatModel.pricing === "expensive" && "💰💰💰"}
+                      </span>
+                    )}
+                  </div>
                   <div className="line-clamp-2 text-muted-foreground text-xs">
                     {chatModel.description}
                   </div>

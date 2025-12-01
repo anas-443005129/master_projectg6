@@ -19,7 +19,6 @@ import {
   ToolInput,
   ToolOutput,
 } from "./elements/tool";
-import { FollowUpSuggestions } from "./follow-up-suggestions";
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
@@ -27,89 +26,119 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
 
+function classifyCodeBlock(
+  language: string,
+  content: string
+): { title: string; type: CanvasCardType["type"] } {
+  const lang = language.toLowerCase();
+  const loweredContent = content.toLowerCase();
+
+  if (lang === "terraform" || loweredContent.includes('resource "aws_')) {
+    return { title: "Terraform Infrastructure", type: "architecture" };
+  }
+
+  if (
+    (lang === "yaml" || lang === "yml") &&
+    (loweredContent.includes("apiversion") || loweredContent.includes("kind:"))
+  ) {
+    return { title: "Kubernetes Manifest", type: "config" };
+  }
+
+  if (lang.includes("docker")) {
+    return { title: "Dockerfile", type: "config" };
+  }
+
+  if (lang === "json" && loweredContent.includes("pricing")) {
+    return { title: "Pricing Structure", type: "pricing" };
+  }
+
+  if (lang === "json" && /"?resources"?\s*:/i.test(content)) {
+    return { title: "CloudFormation Template", type: "architecture" };
+  }
+
+  if (lang === "bash" || lang === "sh") {
+    return { title: "Deployment Script", type: "code" };
+  }
+
+  return { title: "Code Snippet", type: "code" };
+}
+
 // Helper function to extract canvas cards from message text
 function extractCanvasCards(text: string): {
   cards: CanvasCardType[];
   cleanText: string;
 } {
   const cards: CanvasCardType[] = [];
-  const cleanText = text;
+  let workingText = text;
 
-  // Match code blocks with a title prefix pattern
-  const codeBlockPattern = /```(\w+)?\s*\n([\s\S]*?)```/g;
-  const matches = [...text.matchAll(codeBlockPattern)];
+  // Extract substantial code blocks into canvas cards
+  const codeBlockPattern = /```(\w+)?[^\n]*\n([\s\S]*?)```/g;
+  const codeMatches = [...text.matchAll(codeBlockPattern)];
 
-  matches.forEach((match, index) => {
+  codeMatches.forEach((match, index) => {
     const language = match[1] || "text";
     const content = match[2].trim();
 
-    // Only create canvas cards for substantial code blocks
-    if (content.length > 100) {
-      const title =
-        language === "terraform"
-          ? "Infrastructure Code"
-          : language === "yaml" || language === "yml"
-            ? "Configuration"
-            : language === "json" && content.includes("pricing")
-              ? "Pricing Structure"
-              : "Code Snippet";
-
-      cards.push({
-        id: `${index}`,
-        title,
-        type:
-          language === "json" && content.includes("pricing")
-            ? "pricing"
-            : "code",
-        content,
-        language,
-      });
+    if (content.length < 60) {
+      return;
     }
+
+    const meta = classifyCodeBlock(language, content);
+
+    cards.push({
+      id: `code-${index}`,
+      title: meta.title,
+      type: meta.type,
+      content,
+      language,
+    });
+
+    workingText = workingText.replace(match[0], "");
   });
 
+  // Extract guides/runbooks (sections with headings + steps)
+  const guidePattern = /(##+\s+[^\n]+)\n([\s\S]*?)(?=(?:\n##+\s+)|$)/g;
+  const guideMatches = [...workingText.matchAll(guidePattern)];
+
+  guideMatches.forEach((match, index) => {
+    const heading = match[1]?.replace(/^#+\s*/, "").trim();
+    const body = match[2]?.trim() ?? "";
+
+    if (!heading || body.length < 50) {
+      return;
+    }
+
+    const bulletCount = (body.match(/^(?:-|\d+\.)/gm) ?? []).length;
+    const guideKeywords = [
+      "guide",
+      "runbook",
+      "checklist",
+      "playbook",
+      "procedure",
+      "steps",
+      "plan",
+    ];
+    const looksLikeGuide =
+      bulletCount >= 2 ||
+      guideKeywords.some((keyword) => heading.toLowerCase().includes(keyword));
+
+    if (!looksLikeGuide) {
+      return;
+    }
+
+    cards.push({
+      id: `guide-${index}`,
+      title: heading,
+      type: "guide",
+      content: `${heading}\n${body}`,
+    });
+
+    workingText = workingText.replace(match[0], "");
+  });
+
+  const cleanText = workingText.replace(/\n{3,}/g, "\n\n").trim();
+
   return { cards, cleanText };
-}
-
-// Helper function to generate follow-up suggestions based on message context
-function generateFollowUpSuggestions(text: string): string[] {
-  const suggestions: string[] = [];
-
-  if (
-    text.toLowerCase().includes("cost") ||
-    text.toLowerCase().includes("pricing")
-  ) {
-    suggestions.push("How can I optimize these costs?");
-    suggestions.push("Show me a cost breakdown by service");
-  }
-  if (
-    text.toLowerCase().includes("architecture") ||
-    text.toLowerCase().includes("design")
-  ) {
-    suggestions.push("What are the scalability considerations?");
-    suggestions.push("How do I add high availability?");
-  }
-  if (
-    text.toLowerCase().includes("terraform") ||
-    text.toLowerCase().includes("infrastructure")
-  ) {
-    suggestions.push("Add monitoring and logging");
-    suggestions.push("Include disaster recovery setup");
-  }
-  if (
-    text.toLowerCase().includes("region") ||
-    text.toLowerCase().includes("multi-region")
-  ) {
-    suggestions.push("Compare latency across regions");
-    suggestions.push("What's the cost difference?");
-  }
-
-  // Default suggestions if none matched
-  if (suggestions.length === 0) {
-    suggestions.push("Tell me more about this");
-    suggestions.push("What are the next steps?");
-  }
-
-  return suggestions.slice(0, 4); // Limit to 4 suggestions
 }
 
 const PurePreviewMessage = ({
@@ -215,26 +244,27 @@ const PurePreviewMessage = ({
                   message.role === "assistant"
                     ? extractCanvasCards(part.text)
                     : { cards: [], cleanText: part.text };
-                const followUpSuggestions =
-                  message.role === "assistant" && !isLoading
-                    ? generateFollowUpSuggestions(part.text)
-                    : [];
+
+                const textToRender =
+                  message.role === "assistant" ? cleanText : part.text;
+
+                const hasRenderableText = Boolean(textToRender?.trim().length);
 
                 return (
                   <div className="flex w-full flex-col gap-3" key={key}>
-                    <MessageContent
-                      className={cn({
-                        "wrap-break-word glass-card dark:glass-card-dark w-fit rounded-2xl border border-primary/20 px-4 py-3 text-right":
-                          message.role === "user",
-                        "bg-transparent px-0 py-0 text-left":
-                          message.role === "assistant",
-                      })}
-                      data-testid="message-content"
-                    >
-                      <Response>
-                        {sanitizeText(cleanText || part.text)}
-                      </Response>
-                    </MessageContent>
+                    {hasRenderableText && (
+                      <MessageContent
+                        className={cn({
+                          "wrap-break-word glass-card dark:glass-card-dark w-fit rounded-2xl border border-primary/20 px-4 py-3 text-right":
+                            message.role === "user",
+                          "bg-transparent px-0 py-0 text-left":
+                            message.role === "assistant",
+                        })}
+                        data-testid="message-content"
+                      >
+                        <Response>{sanitizeText(textToRender)}</Response>
+                      </MessageContent>
+                    )}
 
                     {cards.length > 0 && (
                       <div className="flex flex-col gap-2">
@@ -242,13 +272,6 @@ const PurePreviewMessage = ({
                           <CanvasCard card={card} key={card.id} />
                         ))}
                       </div>
-                    )}
-
-                    {sendMessage && followUpSuggestions.length > 0 && (
-                      <FollowUpSuggestions
-                        sendMessage={sendMessage}
-                        suggestions={followUpSuggestions}
-                      />
                     )}
                   </div>
                 );
@@ -414,7 +437,6 @@ export const PreviewMessage = memo(
     if (!equal(prevProps.vote, nextProps.vote)) {
       return false;
     }
-
     return false;
   }
 );
