@@ -38,11 +38,9 @@ export default function Page() {
       toast({ type: "success", description: "Account created successfully!" });
 
       setIsSuccessful(true);
-      updateSession();
-      router.refresh();
+      void updateSession().then(() => router.push("/chat"));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.status, router.refresh, updateSession]);
+  }, [state.status, router, updateSession]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get("email") as string);
