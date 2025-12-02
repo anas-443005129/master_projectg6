@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
   type Dispatch,
   memo,
+  type ReactNode,
   type SetStateAction,
   startTransition,
   useCallback,
@@ -68,6 +69,12 @@ function PureMultimodalInput({
   onModelChange,
   onCloudContextChange,
   usage,
+  guestPromptCount = 0,
+  guestPromptLimit = 0,
+  guestLimitReached = false,
+  loginHref = "/login",
+  tokenLimitReached = false,
+  subscribeHref = "/#pricing",
 }: {
   chatId: string;
   input: string;
@@ -85,6 +92,12 @@ function PureMultimodalInput({
   onModelChange?: (modelId: string) => void;
   onCloudContextChange?: (context: CloudContext) => void;
   usage?: AppUsage;
+  guestPromptCount?: number;
+  guestPromptLimit?: number;
+  guestLimitReached?: boolean;
+  loginHref?: string;
+  tokenLimitReached?: boolean;
+  subscribeHref?: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -143,7 +156,23 @@ function PureMultimodalInput({
   );
 
   const submitForm = useCallback(() => {
+    const hasPayload = input.trim().length > 0 || attachments.length > 0;
+
+    if (!hasPayload) {
+      toast.error("Add a message or attachment before sending!");
+      return;
+    }
+
     window.history.pushState({}, "", `/chat/${chatId}`);
+
+    const textParts = input.trim().length
+      ? [
+          {
+            type: "text" as const,
+            text: input,
+          },
+        ]
+      : [];
 
     sendMessage({
       role: "user",
@@ -154,10 +183,7 @@ function PureMultimodalInput({
           name: attachment.name,
           mediaType: attachment.contentType,
         })),
-        {
-          type: "text",
-          text: input,
-        },
+        ...textParts,
       ],
     });
 
@@ -305,6 +331,53 @@ function PureMultimodalInput({
     return () => textarea.removeEventListener("paste", handlePaste);
   }, [handlePaste]);
 
+  const guestLockActive = guestLimitReached && guestPromptLimit > 0;
+  const subscriptionLockActive = tokenLimitReached;
+  const accessRestricted = guestLockActive || subscriptionLockActive;
+  const hasComposedPayload = input.trim().length > 0 || attachments.length > 0;
+  const placeholderText = guestLockActive
+    ? "Login to continue the chat"
+    : subscriptionLockActive
+    ? "Subscribe to unlock more responses"
+    : "Send a message...";
+  const guestUsageCopy = guestLockActive
+    ? `You used ${Math.min(
+        guestPromptCount,
+        guestPromptLimit
+      )}/${guestPromptLimit} guest prompts.`
+    : undefined;
+  const registerHref = loginHref.replace("/login", "/register");
+
+  const gateBanners: ReactNode[] = [];
+  if (guestLockActive) {
+    gateBanners.push(
+      <AccessBanner
+        description={
+          guestUsageCopy ??
+          "Create an account to unlock higher-quality responses."
+        }
+        key="guest-lock"
+        primaryHref={loginHref}
+        primaryLabel="Login"
+        secondaryHref={registerHref}
+        secondaryLabel="Create account"
+        title="Free guest limit reached"
+      />
+    );
+  }
+
+  if (subscriptionLockActive) {
+    gateBanners.push(
+      <AccessBanner
+        description="This chat exhausted the available token allowance. Subscribe for higher limits."
+        key="token-lock"
+        primaryHref={subscribeHref}
+        primaryLabel="Subscribe"
+        title="Need more tokens?"
+      />
+    );
+  }
+
   return (
     <div className={cn("relative flex w-full flex-col gap-4", className)}>
       {messages.length === 0 &&
@@ -323,6 +396,10 @@ function PureMultimodalInput({
           </>
         )}
 
+      {gateBanners.length > 0 && (
+        <div className="flex flex-col gap-3">{gateBanners}</div>
+      )}
+
       <input
         className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
         multiple
@@ -336,6 +413,21 @@ function PureMultimodalInput({
         className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
         onSubmit={(event) => {
           event.preventDefault();
+          if (guestLockActive) {
+            toast.info("Login to continue the conversation.");
+            return;
+          }
+
+          if (subscriptionLockActive) {
+            toast.info("Subscribe to keep using the app.");
+            return;
+          }
+
+          if (!hasComposedPayload) {
+            toast.error("Add a message or attachment before sending!");
+            return;
+          }
+
           if (status !== "ready") {
             toast.error("Please wait for the model to finish its response!");
           } else {
@@ -378,14 +470,16 @@ function PureMultimodalInput({
         )}
         <div className="flex flex-row items-start gap-1 sm:gap-2">
           <PromptInputTextarea
-            autoFocus
+            aria-disabled={accessRestricted}
+            autoFocus={!accessRestricted}
             className="grow resize-none border-0! border-none! bg-transparent p-2 text-sm outline-none ring-0 [-ms-overflow-style:none] [scrollbar-width:none] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-scrollbar]:hidden"
             data-testid="multimodal-input"
             disableAutoResize={true}
+            disabled={accessRestricted}
             maxHeight={200}
             minHeight={44}
             onChange={handleInput}
-            placeholder="Send a message..."
+            placeholder={placeholderText}
             ref={textareaRef}
             rows={1}
             value={input}
@@ -395,6 +489,7 @@ function PureMultimodalInput({
         <PromptInputToolbar className="border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!">
           <PromptInputTools className="gap-0 sm:gap-0.5">
             <AttachmentsButton
+              disabled={accessRestricted}
               fileInputRef={fileInputRef}
               selectedModelId={selectedModelId}
               status={status}
@@ -411,7 +506,11 @@ function PureMultimodalInput({
             <PromptInputSubmit
               className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
               data-testid="send-button"
-              disabled={!input.trim() || uploadQueue.length > 0}
+              disabled={
+                accessRestricted ||
+                !hasComposedPayload ||
+                uploadQueue.length > 0
+              }
               status={status}
             >
               <ArrowUpIcon size={14} />
@@ -441,6 +540,24 @@ export const MultimodalInput = memo(
     if (prevProps.selectedModelId !== nextProps.selectedModelId) {
       return false;
     }
+    if (prevProps.guestLimitReached !== nextProps.guestLimitReached) {
+      return false;
+    }
+    if (prevProps.guestPromptCount !== nextProps.guestPromptCount) {
+      return false;
+    }
+    if (prevProps.guestPromptLimit !== nextProps.guestPromptLimit) {
+      return false;
+    }
+    if (prevProps.tokenLimitReached !== nextProps.tokenLimitReached) {
+      return false;
+    }
+    if (prevProps.loginHref !== nextProps.loginHref) {
+      return false;
+    }
+    if (prevProps.subscribeHref !== nextProps.subscribeHref) {
+      return false;
+    }
 
     return true;
   }
@@ -450,10 +567,12 @@ function PureAttachmentsButton({
   fileInputRef,
   status,
   selectedModelId,
+  disabled = false,
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
   status: UseChatHelpers<ChatMessage>["status"];
   selectedModelId: string;
+  disabled?: boolean;
 }) {
   const isReasoningModel = selectedModelId === "chat-model-reasoning";
 
@@ -461,7 +580,7 @@ function PureAttachmentsButton({
     <Button
       className="aspect-square h-8 rounded-lg p-1 transition-colors hover:bg-accent"
       data-testid="attachments-button"
-      disabled={status !== "ready" || isReasoningModel}
+      disabled={disabled || status !== "ready" || isReasoningModel}
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();
@@ -556,3 +675,40 @@ function PureStopButton({
 }
 
 const StopButton = memo(PureStopButton);
+
+type AccessBannerProps = {
+  title: string;
+  description: string;
+  primaryLabel: string;
+  primaryHref: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+};
+
+function AccessBanner({
+  title,
+  description,
+  primaryHref,
+  primaryLabel,
+  secondaryHref,
+  secondaryLabel,
+}: AccessBannerProps) {
+  return (
+    <div className="glass dark:glass-dark w-full rounded-2xl border border-primary/20 p-4 shadow-sm">
+      <div className="flex flex-col gap-2">
+        <p className="font-semibold text-sm">{title}</p>
+        <p className="text-muted-foreground text-sm leading-5">{description}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <a href={primaryHref}>{primaryLabel}</a>
+          </Button>
+          {secondaryHref && secondaryLabel ? (
+            <Button asChild size="sm" variant="outline">
+              <a href={secondaryHref}>{secondaryLabel}</a>
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
