@@ -1,0 +1,46 @@
+import { z } from "zod";
+
+const textPartSchema = z.object({
+  type: z.enum(["text"]),
+  text: z.string().min(1).max(2000),
+});
+
+const filePartSchema = z.object({
+  type: z.enum(["file"]),
+  mediaType: z.enum(["image/jpeg", "image/png"]),
+  name: z.string().min(1).max(100),
+  url: z.string().url(),
+});
+
+const partSchema = z.union([textPartSchema, filePartSchema]);
+
+export const cloudContextSchema = z
+  .object({
+    provider: z.string(),
+    scale: z.string(),
+    traffic: z.string(),
+    region: z.string(),
+  })
+  .optional();
+
+export const postRequestBodySchema = z.object({
+  id: z.string().uuid(),
+  message: z.object({
+    id: z.string().uuid(),
+    role: z.enum(["user"]),
+    parts: z.array(partSchema),
+  }),
+  selectedChatModel: z.enum([
+    "auto",
+    "chat-model",
+    "reasoning-model",
+    "fast-model",
+    "vision-model",
+    "gemini-model",
+  ]),
+  selectedVisibilityType: z.enum(["public", "private"]),
+  cloudContext: cloudContextSchema,
+});
+
+export type PostRequestBody = z.infer<typeof postRequestBodySchema>;
+export type CloudContext = z.infer<typeof cloudContextSchema>;

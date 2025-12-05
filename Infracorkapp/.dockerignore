@@ -1,0 +1,32 @@
+# Dependencies and caches
+node_modules
+.pnpm-store
+.pnpm
+.next
+
+# Build outputs
+out
+build
+dist
+
+# Environment files
+.env*
+
+# IDE/editor noise
+.vscode
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+.pnpm-debug.log*
+
+# Tests and coverage
+coverage
+playwright-report
+test-results
+
+# Git metadata
+.git
+.gitignore
